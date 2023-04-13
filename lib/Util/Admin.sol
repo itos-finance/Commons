@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: BSL-1.1
+pragma solidity ^0.8.13;
+
+enum AdminLevel {
+    NIL, // No clearance. Reject this user. The default 0 value.
+    One, // Can only modify parts of the contract that do not risk user funds.
+    Two, // Can initiate changes to the contract. Can also veto pending changes to the contract.
+    Three // Highest security clearance. Can call everything except reassign owner. Can assign admins.
+}
+
+struct AdminRegistry {
+    // Full security clearance. Can register admins and reassign itself.
+    address owner;
+
+    mapping(address => AdminLevel) admins;
+}
+
+
+/// Utility functions for checking, registering, and deregisterying administrative credentials.
+library AdminLib {
+    bytes32 constant ADMIN_STORAGE_POSITION = keccak256("v4.admin.diamond.storage");
+
+    error InsufficientCredentials();
+    error CannotReinitializeOwner(address existingOwner);
+
+    function adminStore() internal pure returns (AdminRegistry storage adReg) {
+        bytes32 position = ADMIN_STORAGE_POSITION;
+        assembly {
+            adReg.slot := position
+        }
+    }
+
+    /* Getters */
+
+    function getOwner() external view returns (address) {
+        return adminStore().owner;
+    }
+
+    // @return lvl Will be cast to uint8 on return to external contracts.
+    function getAdminLevel(address addr) external view returns (AdminLevel lvl) {
+        return adminStore().admins[addr];
+    }
+
+    /* Validating Helpers */
+
+    function validateOwner() internal view {
+        if (msg.sender != adminStore().owner) {
+            revert InsufficientCredentials();
+        }
+    }
+
+    /// Revert if the msg.sender is a lower lvl than the lvl parameter.
+    function validateLevel(AdminLevel lvl) internal view {
+        AdminRegistry storage adReg = adminStore();
+        if (adReg.owner == msg.sender)
+            return;
+
+        AdminLevel senderLvl = adReg.admins[msg.sender];
+        if (senderLvl < lvl)
+            revert InsufficientCredentials();
+    }
+
+    /// Convenience function so users don't have to import AdminLevel when validating.
+    function validateLevel(uint8 lvl) internal view {
+        validateLevel(AdminLevel(lvl));
+    }
+
+    /* Registry functions */
+
+    /// Called when there is no owner so one can be set for the first time.
+    function initOwner(address owner) public {
+        AdminRegistry storage adReg = adminStore();
+        if (adReg.owner != address(0))
+            revert CannotReinitializeOwner(adReg.owner);
+        adReg.owner = owner;
+    }
+
+    /// Remember to initialize the owner to a contract that can reassign on construction.
+    function reassignOwner(address newOwner) public {
+        validateOwner();
+        adminStore().owner = newOwner;
+    }
+
+    function register(address newAdmin, uint8 level) public {
+        validateLevel(AdminLevel.Three);
+        adminStore().admins[newAdmin] = AdminLevel(level);
+    }
+
+    function deregister(address oldAdmin) public {
+        validateLevel(AdminLevel.Three);
+        adminStore().admins[oldAdmin] = AdminLevel.NIL;
+    }
+}
