@@ -138,4 +138,22 @@ library FullMath {
         }
     }
 
+    /// Short circuit mulDiv if the multiplicands don't overflow.
+    /// Use this when you expect the input values to be small in most cases.
+    /// @dev This charges an extra ~20 gas on top of the regular mulDiv if used, but otherwise costs 30 gas
+    function shortMulDiv(
+        uint256 m0,
+        uint256 m1,
+        uint256 denominator
+    ) internal pure returns (uint256 result) {
+        uint256 num;
+        unchecked {
+            num = m0 * m1;
+        }
+        if (num / m0 == m1) {
+            return num / denominator;
+        } else {
+            return mulDiv(m0, m1, denominator);
+        }
+    }
 }
