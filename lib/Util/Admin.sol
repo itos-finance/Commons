@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
+import { IERC173 } from "ERC/interfaces/IERC173.sol";
+
 enum AdminLevel {
     NIL, // No clearance. Reject this user. The default 0 value.
     One, // Can only modify parts of the contract that do not risk user funds.
@@ -89,5 +91,15 @@ library AdminLib {
     function deregister(address oldAdmin) public {
         validateLevel(AdminLevel.Three);
         adminStore().admins[oldAdmin] = AdminLevel.NIL;
+    }
+}
+
+contract AdminFacet is IERC173 {
+    function transferOwnership(address _newOwner) external override {
+        AdminLib.reassignOwner(_newOwner);
+    }
+
+    function owner() external override view returns (address owner_) {
+        owner_ = AdminLib.getOwner();
     }
 }
