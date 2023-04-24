@@ -11,6 +11,8 @@ or if you'd like
 ```
 Util/=lib/Commons/lib/Util
 Math/=lib/Commons/lib/Math
+Commons/=lib/Commons/src
+Diamond/=lib/Commons/lib/Diamond
 ```
 
 # CI
