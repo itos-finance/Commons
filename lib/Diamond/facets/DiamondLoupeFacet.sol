@@ -10,7 +10,7 @@ pragma solidity ^0.8.0;
 
 import { LibDiamond } from  "../libraries/LibDiamond.sol";
 import { IDiamondLoupe } from "../interfaces/IDiamondLoupe.sol";
-import { IERC165 } from "../interfaces/IERC165.sol";
+import { IERC165 } from "ERC/interfaces/IERC165.sol";
 
 contract DiamondLoupeFacet is IDiamondLoupe, IERC165 {
     // Diamond Loupe Functions
@@ -40,7 +40,7 @@ contract DiamondLoupeFacet is IDiamondLoupe, IERC165 {
             // find the functionSelectors array for selector and add selector to it
             for (uint256 facetIndex; facetIndex < numFacets; facetIndex++) {
                 if (facets_[facetIndex].facetAddress == facetAddress_) {
-                    facets_[facetIndex].functionSelectors[numFacetSelectors[facetIndex]] = selector;                                   
+                    facets_[facetIndex].functionSelectors[numFacetSelectors[facetIndex]] = selector;
                     numFacetSelectors[facetIndex]++;
                     continueLoop = true;
                     break;

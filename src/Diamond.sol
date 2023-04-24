@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.13;
 
 /******************************************************************************\
 * Author: Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
@@ -8,11 +8,11 @@ pragma solidity ^0.8.0;
 * Implementation of a diamond.
 /******************************************************************************/
 
-import { LibDiamond } from "./libraries/LibDiamond.sol";
-import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
-import { IDiamondLoupe } from  "./interfaces/IDiamondLoupe.sol";
-import { IERC173 } from "./interfaces/IERC173.sol";
-import { IERC165} from "./interfaces/IERC165.sol";
+import { LibDiamond } from "Diamond/libraries/LibDiamond.sol";
+import { IDiamondCut } from "Diamond/interfaces/IDiamondCut.sol";
+
+// Itos imports
+import { AdminLib } from "Util/Admin.sol";
 
 // When no function exists for function called
 error FunctionNotFound(bytes4 _functionSelector);
@@ -26,10 +26,10 @@ struct DiamondArgs {
     bytes initCalldata;
 }
 
-contract Diamond {    
-
+contract Diamond {
     constructor(IDiamondCut.FacetCut[] memory _diamondCut, DiamondArgs memory _args) payable {
-        LibDiamond.setContractOwner(_args.owner);
+        AdminLib.initOwner(_args.owner);
+
         LibDiamond.diamondCut(_diamondCut, _args.init, _args.initCalldata);
 
         // Code can be added here to perform actions and set state variables.
