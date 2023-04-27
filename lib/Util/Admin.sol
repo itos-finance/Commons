@@ -94,6 +94,7 @@ library AdminLib {
     }
 }
 
+/// The exposed facet for external interactions with the AdminLib
 contract AdminFacet is IERC173 {
     function transferOwnership(address _newOwner) external override {
         AdminLib.reassignOwner(_newOwner);
@@ -101,5 +102,22 @@ contract AdminFacet is IERC173 {
 
     function owner() external override view returns (address owner_) {
         owner_ = AdminLib.getOwner();
+    }
+
+    /// Fetch the admin level for an address.
+    function adminLevel(address addr) external view returns (uint8 lvl) {
+        return uint8(AdminLib.getAdminLevel(addr));
+    }
+
+    /// Add an admin to this contract. Only level 3 clearance can call this.
+    /// This will overwrite any existing clearance level.
+    function addAdmin(address addr, uint8 lvl) external {
+        AdminLib.register(addr, lvl);
+    }
+
+    /// Remove an admin from this contract. Effectively the same
+    /// as an addAdmin call with level 0.
+    function removeAdmin(address addr) external {
+        AdminLib.deregister(addr);
     }
 }
