@@ -19,7 +19,7 @@ library MathUtils {
     /// @param x The uint256 number for which to calculate the square root.
     /// @return result The result as a uint256.
     /// @custom:smtchecker abstract-function-nondet
-    function sqrt(uint256 x) pure returns (uint256 result) {
+    function sqrt(uint256 x) internal pure returns (uint256 result) {
         if (x == 0) {
             return 0;
         }
