@@ -21,4 +21,32 @@ library ContractLib {
             revert NotAContract();
         }
     }
+
+    /// An address created with CREATE2 is deterministic.
+    /// Given the input arguments, we know exactly what the resulting
+    /// deployed contract's address will be.
+    /// @param deployer The address that created the contract.
+    /// @param salt The salt used when creating the contract.
+    /// @param initCodeHash The keccak hash of the initCode of the deployed contract.
+    function getCreate2Address(
+        address deployer,
+        bytes32 salt,
+        bytes32 initCodeHash
+    ) public pure returns (address deployedAddr) {
+        deployedAddr = address(
+            uint160(
+                uint256(
+                    keccak256(
+                        abi.encodePacked(
+                            hex'ff',
+                            deployer,
+                            salt,
+                            initCodeHash
+                        )
+                    )
+                )
+            )
+        )
+    }
+
 }
