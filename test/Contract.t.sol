@@ -6,7 +6,7 @@ import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdCheats } from "forge-std/StdCheats.sol";
 
 import { ContractLib } from "Util/Contract.sol";
-import { MockFactory, MockPool } from "TestLib/MockPool.u.sol";
+import { MockFactory, MockPool } from "CommonsTestLib/MockPool.u.sol";
 
 contract ContractLibTest is PRBTest, StdCheats {
     function testIsContract() public {
