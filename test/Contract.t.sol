@@ -26,5 +26,4 @@ contract ContractLibTest is PRBTest, StdCheats {
         address createAddr = ContractLib.getCreate2Address(address(factory), salt, initCodeHash);
         assertEq(pool, createAddr);
     }
-
 }
