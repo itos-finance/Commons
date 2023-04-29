@@ -48,4 +48,11 @@ library SafeCast {
         }
         return uint160(u);
     }
+
+    function toInt24(uint24 u) internal pure returns (int24) {
+        if (u > uint24(type(int24).max)) {
+            revert UnsafeICast(u, type(int24).max);
+        }
+        return int24(u);
+    }
 }
