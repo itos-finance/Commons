@@ -46,7 +46,7 @@ library ContractLib {
                     )
                 )
             )
-        )
+        );
     }
 
 }
