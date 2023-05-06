@@ -13,6 +13,16 @@ library X32 {
     }
 }
 
+library X64 {
+    // Multiply two 256 bit numbers to a 512 number, but one of the 256's is X32.
+    function mul512(uint256 a, uint256 b)
+    internal pure returns (uint256 bot, uint256 top) {
+        (uint256 rawB, uint256 rawT) = FullMath.mul512(a, b);
+        bot = (rawB >> 64) + (rawT << 192);
+        top = rawT >> 64;
+    }
+}
+
 /**
  * @notice Utility for Q64.96 operations
  **/
@@ -81,6 +91,16 @@ library X128 {
         assembly {
             res := add(add(shr(128, bot), shl(128, top)), gt(mod(bot, modmax), 0))
         }
+    }
+
+    /// Multiply a 256 bit number by a 256 bit number, either of which is X128, to get 384 bits.
+    /// @dev This rounds results down.
+    /// @return bot The bottom 256 bits of the result.
+    /// @return top The top 128 bits of the result.
+    function mul512(uint256 a, uint256 b) internal pure returns (uint256 bot, uint256 top) {
+        (uint256 _bot, uint256 _top) = FullMath.mul512(a, b);
+        bot = (_bot >> 128) + (_top << 128);
+        top = _top >> 128;
     }
 }
 
