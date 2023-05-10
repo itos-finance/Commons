@@ -30,33 +30,27 @@ library Q64X96 {
 
     uint256 constant PRECISION = 96;
 
-    uint256 constant MASK64 = uint256(type(uint64).max);
+    uint256 constant HALF96 = uint256(1 << 95);
 
-    /// Multiply an X96 precision number by an arbitrary uint128 number.
+    error Q64X96Overflow(uint160 a, uint256 b);
+
+    /// Multiply an X96 precision number by an arbitrary uint256 number.
     /// Returns with the same precision as b.
-    /// The result takes up 196 bits.
-    function mul(uint160 a, uint128 b, bool roundUp) internal pure returns(uint256) {
-        uint256 m = mulX64(a, b);
-        uint256 round = (roundUp && (m & MASK64 != 0)) ? 1 : 0;
-        unchecked { return (m >> 64) + round; }
+    /// The result takes up 256 bits. Will error on overflow.
+    function mul(uint160 a, uint256 b, bool roundUp) internal pure returns(uint256) {
+        (uint256 bot, uint256 top) = FullMath.mul512(a, b);
+        uint256 round = (roundUp && (bot & HALF96 != 0)) ? 1 : 0;
+        if ((top >> 96) > 0) {
+            revert Q64X96Overflow(a, b);
+        }
+        return (bot >> 96 + round) + (top << 160);
     }
 
-    /// Mutliple an X96 precision number by an arbitrary uint128 number.
-    /// Returns with precision X64
-    /// The result takes up the full 256 bits.
-    function mulX64(uint160 a, uint128 b) internal pure returns(uint256) {
-        uint256 num = uint256(a);
-        uint256 other = uint256(b) << PRECISION;
-        (uint256 bot, uint256 top) = FullMath.mul512(num, other);
-        // We know at most 160 + 96 + 128 = 384 bits are set.
-        // Drop 96 * 2 - 64 = 128 bits to keep 64 precision.
-        unchecked { return (top << 128) + (bot >> 128); }
-    }
-
-    // Divide a uint128 by a Q64X96 number.
-    // Returns with the same precision as num.
-    // The result can at most take 224 bits.
-    function div(uint128 num, uint160 denom, bool roundUp)
+    /// Divide a uint160 by a Q64X96 number.
+    /// Returns with the same precision as num.
+    /// @dev uint160 is chosen because once the 96 bits of precision are cancelled out,
+    /// the result is at most 256 bits.
+    function div(uint160 num, uint160 denom, bool roundUp)
     internal pure returns (uint256 res) {
         uint256 fullNum = uint256(num) << PRECISION;
         res = fullNum / denom;
