@@ -8,11 +8,11 @@ pragma solidity ^0.8.13;
 * Implementation of a diamond.
 /******************************************************************************/
 
-import { LibDiamond } from "Diamond/libraries/LibDiamond.sol";
-import { IDiamondCut } from "Diamond/interfaces/IDiamondCut.sol";
+import { LibDiamond } from "./libraries/LibDiamond.sol";
+import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
 
 // Itos imports
-import { AdminLib } from "Util/Admin.sol";
+import { AdminLib } from "../Util/Admin.sol";
 
 // When no function exists for function called
 error FunctionNotFound(bytes4 _functionSelector);
