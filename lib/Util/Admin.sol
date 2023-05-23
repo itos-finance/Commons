@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import { IERC173 } from "ERC/interfaces/IERC173.sol";
+import { IERC173 } from "../ERC/interfaces/IERC173.sol";
 
 enum AdminLevel {
     NIL, // No clearance. Reject this user. The default 0 value.
@@ -119,5 +119,10 @@ contract AdminFacet is IERC173 {
     /// as an addAdmin call with level 0.
     function removeAdmin(address addr) external {
         AdminLib.deregister(addr);
+    }
+
+    // Initialize the Facet's owner
+    function initOwner(address owner) external {
+        AdminLib.initOwner(owner);
     }
 }
