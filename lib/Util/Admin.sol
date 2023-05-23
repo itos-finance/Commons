@@ -70,7 +70,7 @@ library AdminLib {
     /* Registry functions */
 
     /// Called when there is no owner so one can be set for the first time.
-    function initOwner(address owner) public {
+    function initOwner(address owner) internal {
         AdminRegistry storage adReg = adminStore();
         if (adReg.owner != address(0))
             revert CannotReinitializeOwner(adReg.owner);
@@ -78,7 +78,7 @@ library AdminLib {
     }
 
     /// Remember to initialize the owner to a contract that can reassign on construction.
-    function reassignOwner(address newOwner) public {
+    function reassignOwner(address newOwner) internal {
         validateOwner();
         adminStore().owner = newOwner;
     }
