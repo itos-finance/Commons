@@ -30,20 +30,38 @@ library Q64X96 {
 
     uint256 constant PRECISION = 96;
 
-    uint256 constant HALF96 = uint256(1 << 95);
+    uint256 constant SHIFT = 1 << 96;
 
     error Q64X96Overflow(uint160 a, uint256 b);
 
     /// Multiply an X96 precision number by an arbitrary uint256 number.
     /// Returns with the same precision as b.
     /// The result takes up 256 bits. Will error on overflow.
-    function mul(uint160 a, uint256 b, bool roundUp) internal pure returns(uint256) {
+    function mul(uint160 a, uint256 b, bool roundUp) internal pure returns(uint256 res) {
         (uint256 bot, uint256 top) = FullMath.mul512(a, b);
-        uint256 round = (roundUp && (bot & HALF96 != 0)) ? 1 : 0;
         if ((top >> 96) > 0) {
             revert Q64X96Overflow(a, b);
         }
-        return (bot >> 96 + round) + (top << 160);
+        assembly {
+            res := add(shr(96, bot), shl(160, top))
+        }
+        if (roundUp && (bot % SHIFT > 0)) {
+            res += 1;
+        }
+    }
+
+    /// Same as the regular mul but without checking for overflow
+    function unsafeMul(uint160 a, uint256 b, bool roundUp) internal pure returns(uint256 res) {
+        (uint256 bot, uint256 top) = FullMath.mul512(a, b);
+        assembly {
+            res := add(shr(96, bot), shl(160, top))
+        }
+        if (roundUp) {
+            uint256 modby = SHIFT;
+            assembly {
+                res := add(res, gt(mod(bot, modby), 0))
+            }
+        }
     }
 
     /// Divide a uint160 by a Q64X96 number.
@@ -54,8 +72,10 @@ library Q64X96 {
     internal pure returns (uint256 res) {
         uint256 fullNum = uint256(num) << PRECISION;
         res = fullNum / denom;
-        if (roundUp && (res * denom < fullNum)) {
-            res += 1;
+        if (roundUp) {
+            assembly {
+                res := add(res, gt(fullNum, mul(res, denom)))
+            }
         }
     }
 }
@@ -68,7 +88,7 @@ library X96 {
 library X128 {
     uint256 constant PRECISION = 128;
 
-    uint256 constant MAX = type(uint128).max;
+    uint256 constant SHIFT = 1 << 128;
 
     /// Multiply a 256 bit number by a 128 bit number. Either of which is X128.
     /// @dev This rounds results down.
@@ -81,7 +101,7 @@ library X128 {
     /// @dev This rounds results up.
     function mul256RoundUp(uint128 a, uint256 b) internal pure returns (uint256 res) {
         (uint256 bot, uint256 top) = FullMath.mul512(a, b);
-        uint256 modmax = MAX;
+        uint256 modmax = SHIFT;
         assembly {
             res := add(add(shr(128, bot), shl(128, top)), gt(mod(bot, modmax), 0))
         }
