@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.13;
 
-import { IERC20Minimal } from "ERC/interfaces/IERC20Minimal.sol";
-import { ContractLib } from "Util/Contract.sol";
+import { IERC20Minimal } from "../ERC/interfaces/IERC20Minimal.sol";
+import { ContractLib } from "./Contract.sol";
 
 type Token is address;
 
