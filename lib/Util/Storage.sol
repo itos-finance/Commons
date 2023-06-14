@@ -20,4 +20,6 @@ pragma solidity ^0.8.13;
 
   Alternatively, we can give the mutexes a separate storage location and group them into a bitmap, but that's
   still more expensive than a single reentrancy guard.
+
+  Once EIP-1153 is live we can look into these solutions.
  */
