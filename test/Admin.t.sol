@@ -8,6 +8,8 @@ import { StdCheats } from "forge-std/StdCheats.sol";
 import { AdminLib } from "Util/Admin.sol";
 
 contract AdminTest is PRBTest, StdCheats {
+    // solhint-disable
+
     AdminTestHelper public helper;
 
     function setUp() public {
@@ -121,6 +123,8 @@ contract AdminTest is PRBTest, StdCheats {
 
         assertEq(AdminLib.getAdminRights(address(helper)), 1);
     }
+
+    // solhint-enable
 }
 
 contract AdminTestHelper {

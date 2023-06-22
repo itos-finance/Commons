@@ -8,7 +8,7 @@ import { StdCheats } from "forge-std/StdCheats.sol";
 import { Timed, TimedEntry } from "Util/Timed.sol";
 
 contract TimedTest is PRBTest, StdCheats {
-    TimedSender sender;
+    TimedSender public sender;
 
     function setUp() public {
         sender = new TimedSender(address(this));
@@ -76,7 +76,7 @@ contract TimedTest is PRBTest, StdCheats {
 
 /// Helper contract to send bytes to the TimedTest as calldata
 contract TimedSender {
-    TimedTest test;
+    TimedTest public test;
 
     constructor(address _test) {
         test = TimedTest(_test);
