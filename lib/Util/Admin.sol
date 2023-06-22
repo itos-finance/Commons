@@ -3,27 +3,48 @@ pragma solidity ^0.8.13;
 
 import { IERC173 } from "../ERC/interfaces/IERC173.sol";
 
-enum AdminLevel {
-    NIL, // No clearance. Reject this user. The default 0 value.
-    One, // Can only modify parts of the contract that do not risk user funds.
-    Two, // Can initiate changes to the contract. Can also veto pending changes to the contract.
-    Three // Highest security clearance. Can call everything except reassign owner. Can assign admins.
+/**
+ * @title Administrative Library
+ * @author Terence An
+ * @notice This contains an administrative utility that uses diamond storage.
+ * This is used to add and remove administrative privileges from addresses.
+ * It also has validation functions for those privileges.
+ * It adheres to ERC-173 which establishes an owernship standard.
+ * @dev Administrative right assignments should be time-gated and veto-able for modern
+ * contracts.
+ **/
+
+/// These are flags that can be joined so each is assigned its own hot bit.
+/// @dev These flags get the very top bits so that user specific flags are given the lower bits.
+library AdminFlags {
+    uint256 public constant NULL  = 0; // No clearance at all. Default value.
+    uint256 public constant OWNER = 0x8000000000000000000000000000000000000000000000000000000000000000;
+    uint256 public constant VETO  = 0x4000000000000000000000000000000000000000000000000000000000000000;
 }
 
 struct AdminRegistry {
-    // Full security clearance. Can register admins and reassign itself.
+    // The owner actually does not have any rights except the ability to assign rights to users.
+    // Of course it can assign rights to itself.
+    // Thus it is probably desireable to qualify this ability, for example by time-gating it.
     address owner;
 
-    mapping(address => AdminLevel) admins;
+    // Rights are one hot encodings of permissions granted to users.
+    // Each right should be a single bit in the uint256.
+    mapping(address => uint256) rights;
 }
 
-
-/// Utility functions for checking, registering, and deregisterying administrative credentials.
+/// Utility functions for checking, registering, and deregisterying administrative credentials
+/// in a Diamond storage context. Most contracts that need this level of security sophistication
+/// are probably large enough to required diamond storage.
 library AdminLib {
     bytes32 constant ADMIN_STORAGE_POSITION = keccak256("v4.admin.diamond.storage");
 
-    error InsufficientCredentials();
+    error NotOwner();
+    error InsufficientCredentials(address caller, uint256 expectedRights, uint256 actualRights);
     error CannotReinitializeOwner(address existingOwner);
+
+    event AdminAdded(address admin, uint256 newRight, uint256 existing);
+    event AdminRemoved(address admin, uint256 removedRight, uint256 existing);
 
     function adminStore() internal pure returns (AdminRegistry storage adReg) {
         bytes32 position = ADMIN_STORAGE_POSITION;
@@ -39,32 +60,25 @@ library AdminLib {
     }
 
     // @return lvl Will be cast to uint8 on return to external contracts.
-    function getAdminLevel(address addr) external view returns (AdminLevel lvl) {
-        return adminStore().admins[addr];
+    function getAdminRights(address addr) external view returns (uint256 rights) {
+        return adminStore().rights[addr];
     }
 
     /* Validating Helpers */
 
     function validateOwner() internal view {
         if (msg.sender != adminStore().owner) {
-            revert InsufficientCredentials();
+            revert NotOwner();
         }
     }
 
-    /// Revert if the msg.sender is a lower lvl than the lvl parameter.
-    function validateLevel(AdminLevel lvl) internal view {
+    /// Revert if the msg.sender does not have the expected right.
+    function validateRights(uint256 expected) internal view {
         AdminRegistry storage adReg = adminStore();
-        if (adReg.owner == msg.sender)
-            return;
-
-        AdminLevel senderLvl = adReg.admins[msg.sender];
-        if (senderLvl < lvl)
-            revert InsufficientCredentials();
-    }
-
-    /// Convenience function so users don't have to import AdminLevel when validating.
-    function validateLevel(uint8 lvl) internal view {
-        validateLevel(AdminLevel(lvl));
+        uint256 actual = adReg.rights[msg.sender];
+        if (actual & expected != expected) {
+            revert InsufficientCredentials(msg.sender, expected, actual);
+        }
     }
 
     /* Registry functions */
@@ -77,25 +91,35 @@ library AdminLib {
         adReg.owner = owner;
     }
 
-    /// Remember to initialize the owner to a contract that can reassign on construction.
+    /// Move ownership to another address
+    /// @dev Remember to initialize the owner to a contract that can reassign on construction.
     function reassignOwner(address newOwner) internal {
         validateOwner();
         adminStore().owner = newOwner;
     }
 
-    function register(address newAdmin, uint8 level) public {
-        validateLevel(AdminLevel.Three);
-        adminStore().admins[newAdmin] = AdminLevel(level);
+    /// Add a right to an address
+    /// @dev When actually using, the importing function should add restrictions to this.
+    function register(address admin, uint256 right) internal {
+        AdminRegistry storage adReg = adminStore();
+        uint256 existing = adReg.rights[admin];
+        adReg.rights[admin] = existing | right;
+        emit AdminAdded(admin, right, existing);
     }
 
-    function deregister(address oldAdmin) public {
-        validateLevel(AdminLevel.Three);
-        adminStore().admins[oldAdmin] = AdminLevel.NIL;
+    /// Remove a right from an address.
+    /// @dev When using, the wrapper function should add restrictions.
+    function deregister(address admin, uint256 right) internal {
+        AdminRegistry storage adReg = adminStore();
+        uint256 existing = adReg.rights[admin];
+        adReg.rights[admin] = existing & (~right);
+        emit AdminRemoved(admin, right, existing);
+
     }
 }
 
-/// The exposed facet for external interactions with the AdminLib
-contract AdminFacet is IERC173 {
+/// Base class for an admin facet with external interactions with the AdminLib
+contract BaseAdminFacet is IERC173 {
     function transferOwnership(address _newOwner) external override {
         AdminLib.reassignOwner(_newOwner);
     }
@@ -105,19 +129,7 @@ contract AdminFacet is IERC173 {
     }
 
     /// Fetch the admin level for an address.
-    function adminLevel(address addr) external view returns (uint8 lvl) {
-        return uint8(AdminLib.getAdminLevel(addr));
-    }
-
-    /// Add an admin to this contract. Only level 3 clearance can call this.
-    /// This will overwrite any existing clearance level.
-    function addAdmin(address addr, uint8 lvl) external {
-        AdminLib.register(addr, lvl);
-    }
-
-    /// Remove an admin from this contract. Effectively the same
-    /// as an addAdmin call with level 0.
-    function removeAdmin(address addr) external {
-        AdminLib.deregister(addr);
+    function adminRights(address addr) external view returns (uint256 rights) {
+        return AdminLib.getAdminRights(addr);
     }
 }
