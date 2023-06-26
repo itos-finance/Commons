@@ -61,7 +61,7 @@ library Timed {
     }
 
     /// Used to view pending changes.
-    function fetch(PreCommits storage s, uint256 useId) view internal returns (TimedEntry memory e) {
+    function fetch(PreCommits storage s, uint256 useId) internal view returns (TimedEntry memory e) {
         e = s.entries[useId];
     }
 
@@ -91,6 +91,10 @@ library Timed {
         return fetchAndDelete(timedStore(), useId);
     }
 
+    function fetch(uint256 useId) internal view returns (TimedEntry memory e) {
+        return fetch(timedStore(), useId);
+    }
+
     function deleteEntry(uint256 useId) internal {
         deleteEntry(timedStore(), useId);
     }
@@ -99,7 +103,7 @@ library Timed {
 /// A Base class for users to build a facet upon.
 contract BaseTimedFacet {
     /// Fetch any pending changes
-    function fetch(uint256 useId) view external returns (TimedEntry memory e) {
+    function fetch(uint256 useId) external view returns (TimedEntry memory e) {
         return Timed.fetch(Timed.timedStore(), useId);
     }
 }
