@@ -8,10 +8,11 @@ pragma solidity ^0.8.0;
 /******************************************************************************/
 
 import { ITimedDiamondCut } from "../interfaces/ITimedDiamondCut.sol";
+import { IDiamond } from "Diamond/interfaces/IDiamond.sol";
 import { LibDiamond } from "Diamond/libraries/LibDiamond.sol";
 
 struct TimedCut {
-    FacetCut cut;
+    ITimedDiamondCut.FacetCut cut;
     address init;
     uint64 timestamp;
     bytes initCalldata;
@@ -23,7 +24,7 @@ struct TimedCutStorage {
     uint256 counter;
 }
 
-abstract contract TimedDiamondCutFacet {
+abstract contract TimedDiamondCutFacet is ITimedDiamondCut {
     bytes32 constant TIMED_DIAMOND_STORAGE_POSITION = keccak256("timed.diamond.cut.itos.storage");
 
     /// Get the diamond storage for our cuts.
@@ -34,19 +35,19 @@ abstract contract TimedDiamondCutFacet {
         }
     }
 
-    /// @inheritdoc ITimedDiamondCutFacet
+    /// @inheritdoc ITimedDiamondCut
     /// @dev Any child class of the time delayed diamond cut needs to specify a time delay.
-    function delay() public virtual returns (uint32);
+    function delay() public view virtual returns (uint32);
 
     /// Validate that the caller has the correct permissions. Revert if incorrect.
-    function validateCaller() internal virtual;
+    function validateCaller() internal view virtual;
 
     /// Validate that the caller has the correct veto permissions.
-    function validateVeto() internal virtual;
+    function validateVeto() internal view virtual;
 
     /// @inheritdoc ITimedDiamondCut
     function timedDiamondCut(
-        FacetCut calldata _cut,
+        ITimedDiamondCut.FacetCut calldata _cut,
         address _init,
         bytes calldata _calldata
     ) external override returns (uint256 assignmentId) {
@@ -62,7 +63,7 @@ abstract contract TimedDiamondCutFacet {
         tCut.timestamp = uint64(block.timestamp);
         tCut.initCalldata = _calldata;
 
-        emit TimedDiamondCut(
+        emit ITimedDiamondCut.TimedDiamondCut(
             uint64(block.timestamp) + delay(),
             assignmentId,
             _cut,
@@ -77,12 +78,15 @@ abstract contract TimedDiamondCutFacet {
         TimedCutStorage storage tcs = timedCutStorage();
         TimedCut storage tCut = tcs.assignments[assignmentId];
 
+        if (tCut.timestamp == 0)
+            revert ITimedDiamondCut.CutAssignmentNotFound(assignmentId);
+
         // We check the delay now in case it has changed since the install.
         uint64 confirmTime = tCut.timestamp + delay();
         if (uint64(block.timestamp) < confirmTime)
-            revert PrematureCutConfirmation(confirmTime);
+            revert ITimedDiamondCut.PrematureCutConfirmation(confirmTime);
 
-        FacetCut[] memory cuts = new FacetCut[](1);
+        ITimedDiamondCut.FacetCut[] memory cuts = new ITimedDiamondCut.FacetCut[](1);
         cuts[0] = tCut.cut;
 
         LibDiamond.diamondCut(
@@ -91,14 +95,14 @@ abstract contract TimedDiamondCutFacet {
             tCut.initCalldata
         );
 
-        emit DiamondCut(cuts, tCut.init, tCut.initCalldata);
+        emit IDiamond.DiamondCut(cuts, tCut.init, tCut.initCalldata);
 
         // We no longer need it. Make sure no reinitialization happens.
-        delete tCut;
+        delete tcs.assignments[assignmentId];
     }
 
     /// @inheritdoc ITimedDiamondCut
-    function veto(uint256 assignmentId) external override {
+    function vetoCut(uint256 assignmentId) external override {
         validateVeto();
         TimedCutStorage storage tcs = timedCutStorage();
         delete tcs.assignments[assignmentId];

@@ -15,6 +15,8 @@ interface ITimedDiamondCut is IDiamond {
 
     /// Attempted to confirm a cut too early.
     error PrematureCutConfirmation(uint256 confirmTime);
+    /// Emitted when the assignmentId doesn't map to any stored cut.
+    error CutAssignmentNotFound(uint256 assignmentId);
 
     /// @notice Add/replace/remove one facet in a time-gated way. Optionally executes an
     /// initialization function with a delegate call.
@@ -34,8 +36,8 @@ interface ITimedDiamondCut is IDiamond {
     function confirmCut(uint256 assignmentId) external;
 
     /// @notice Reject a previously initiated timed diamond cut.
-    function veto(uint256 assignmentId) external;
+    function vetoCut(uint256 assignmentId) external;
 
     /// @notice How much an initialized cut has to wait before it can be confirmed.
-    function delay() public returns (uint32);
+    function delay() external view returns (uint32);
 }
