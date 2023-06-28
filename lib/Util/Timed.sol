@@ -11,7 +11,8 @@ pragma solidity ^0.8.13;
  * specific commit functions that do the required validation.
  * For an example using this with Diamond storage, see the Params.sol file
  * in Itos 2sAMM repo.
- **/
+ *
+ */
 
 struct TimedEntry {
     // 64 bits is more than enough. If necessary a timeout can be introduced to shorten these bits further
@@ -24,7 +25,7 @@ struct TimedEntry {
 
 struct PreCommits {
     // A mapping from the usage id to its pre-committed entry.
-    mapping(uint256  => TimedEntry) entries;
+    mapping(uint256 => TimedEntry) entries;
 }
 
 /**
@@ -33,16 +34,13 @@ struct PreCommits {
  * modifications for themselves. They decode the bytes entry with their expected type
  * and use the values as they see fit.
  * For each usage id, there can only be one precommit to competing commits
- **/
+ *
+ */
 library Timed {
     /// Diamond storage address if you choose to use use it.
     bytes32 constant TIMED_STORAGE_POSITION = keccak256("v4.timed.diamond.storage");
 
-    event PreCommit(
-        uint256 indexed useId,
-        address indexed submitter,
-        bytes entry
-    );
+    event PreCommit(uint256 indexed useId, address indexed submitter, bytes entry);
 
     /// Use in an external contract function to submit time gated changes.
     function precommit(PreCommits storage s, uint256 useId, bytes calldata _entry) internal {
@@ -103,7 +101,7 @@ library Timed {
 /// A Base class for users to build a facet upon.
 contract BaseTimedFacet {
     /// Fetch any pending changes
-    function fetch(uint256 useId) external view returns (TimedEntry memory e) {
+    function fetch(uint256 useId) public view returns (TimedEntry memory e) {
         return Timed.fetch(Timed.timedStore(), useId);
     }
 }
