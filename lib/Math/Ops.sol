@@ -137,3 +137,27 @@ library U128Ops {
         }
     }
 }
+
+library U256Ops {
+    function add(uint256 self, int256 other) public pure returns (uint256) {
+        if (other >= 0) {
+            return self + uint256(other);
+        } else {
+            return self - uint256(-other);
+        }
+    }
+
+    function sub(uint256 self, uint256 other) public pure returns (int256) {
+        if (other >= self) {
+            uint256 temp = other - self;
+            // Yes technically the max should be -type(int256).max but that's annoying to
+            // get right and cheap for basically no benefit.
+            require(temp <= uint256(type(int256).max));
+            return -int256(temp);
+        } else {
+            uint256 temp = self - other;
+            require(temp <= uint256(type(int256).max));
+            return int256(temp);
+        }
+    }
+}
