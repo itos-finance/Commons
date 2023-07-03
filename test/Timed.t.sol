@@ -72,6 +72,53 @@ contract TimedTest is PRBTest, StdCheats {
         e = Timed.fetch(Timed.timedStore(), 5);
         assertEq(e.timestamp, 0);
     }
+
+    function testFetchPrecommit() public {
+        bytes memory data = abi.encode(uint256(101));
+        send(1, data);
+        data = abi.encode(uint256(202));
+        send(2, data);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Timed.PrematureParamUpdate.selector,
+                1,
+                uint64(block.timestamp) + 10,
+                uint64(block.timestamp)
+            )
+        );
+        Timed.fetchPrecommit(1, 10);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Timed.PrematureParamUpdate.selector,
+                1,
+                uint64(block.timestamp) + 5,
+                uint64(block.timestamp)
+            )
+        );
+        // Roll but not far enough
+        vm.roll(block.timestamp + 5);
+        Timed.fetchPrecommit(1, 10);
+        // Roll enough
+        vm.roll(block.timestamp + 5);
+        bytes memory entry = Timed.fetchPrecommit(1, 10);
+        assertEq(abi.decode(entry, (uint256)), 101);
+
+        // A fetch that doesn't exist.
+        vm.expectRevert(abi.encodeWithSelector(Timed.NoPrecommitFound.selector, 3));
+        Timed.fetchPrecommit(3, 0);
+
+        // No delay also works.
+        entry = Timed.fetchPrecommit(2, 0);
+        assertEq(abi.decode(entry, (uint256)), 202);
+    }
+
+    function testExistingPrecommit() public {
+        bytes memory data = abi.encode(uint256(1));
+        send(1, data);
+        vm.expectRevert(abi.encodeWithSelector(Timed.ExistingPrecommitFound.selector, 1));
+        send(1, data);
+    }
 }
 
 /// Helper contract to send bytes to the TimedTest as calldata

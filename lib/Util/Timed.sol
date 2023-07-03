@@ -40,11 +40,19 @@ library Timed {
     /// Diamond storage address if you choose to use use it.
     bytes32 constant TIMED_STORAGE_POSITION = keccak256("v4.timed.diamond.storage");
 
+    /// Thrown when a useIds update is attempted before the required time has passed.
+    error PrematureParamUpdate(uint256 useId, uint64 expectedTime, uint64 actualTime);
+    error NoPrecommitFound(uint256 useId);
+    /// Only one precommit can exist for a useId at a time. Either Veto or Accept the existing precommit first.
+    error ExistingPrecommitFound(uint256 useId);
+
     event PreCommit(uint256 indexed useId, address indexed submitter, bytes entry);
 
     /// Use in an external contract function to submit time gated changes.
     function precommit(PreCommits storage s, uint256 useId, bytes calldata _entry) internal {
         TimedEntry storage entry = s.entries[useId];
+        if (entry.timestamp != 0)
+            revert ExistingPrecommitFound(useId);
         entry.timestamp = uint64(block.timestamp);
         entry.submitter = msg.sender;
         entry.entry = _entry;
@@ -85,6 +93,20 @@ library Timed {
         precommit(timedStore(), useId, entry);
     }
 
+    // precommit but from memory bytes. Using calldata saves a copy when the input is calldata,
+    // but in some cases we build an in-memory bytes array.
+    function memoryPrecommit(uint256 useId, bytes memory _entry) internal {
+        PreCommits storage s = timedStore();
+        TimedEntry storage entry = s.entries[useId];
+        if (entry.timestamp != 0)
+            revert ExistingPrecommitFound(useId);
+        entry.timestamp = uint64(block.timestamp);
+        entry.submitter = msg.sender;
+        entry.entry = _entry;
+
+        emit PreCommit(useId, msg.sender, _entry);
+    }
+
     function fetchAndDelete(uint256 useId) internal returns (TimedEntry memory e) {
         return fetchAndDelete(timedStore(), useId);
     }
@@ -95,6 +117,26 @@ library Timed {
 
     function deleteEntry(uint256 useId) internal {
         deleteEntry(timedStore(), useId);
+    }
+
+    /* Convenience functions for building on top of */
+
+    // A helper for the most common usage pattern.
+    // Fetch the precommit data and error if it doesn't exist or the fetch is premature
+    // according to the passed in delay. Delete the entry from the bookkeeping if returned.
+    function fetchPrecommit(uint256 useId, uint32 delay) internal returns (bytes memory e) {
+        TimedEntry memory tde = fetch(useId);
+        if (tde.timestamp == 0)
+            revert NoPrecommitFound(useId);
+
+        uint64 actualTime = uint64(block.timestamp);
+        uint64 expectedTime = tde.timestamp + delay;
+        if (actualTime < expectedTime)
+            revert PrematureParamUpdate(useId, expectedTime, actualTime);
+
+        e = tde.entry;
+
+        deleteEntry(useId);
     }
 }
 
