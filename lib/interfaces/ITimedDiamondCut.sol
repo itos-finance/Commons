@@ -14,7 +14,7 @@ interface ITimedDiamondCut is IDiamond {
     event TimedDiamondCut(uint64 indexed startTime, uint256 assignmentId, FacetCut _diamondCut, address _init, bytes _calldata);
 
     /// Attempted to confirm a cut too early.
-    error PrematureCutConfirmation(uint256 confirmTime);
+    error PrematureCutConfirmation(uint64 confirmTime);
     /// Emitted when the assignmentId doesn't map to any stored cut.
     error CutAssignmentNotFound(uint256 assignmentId);
 
