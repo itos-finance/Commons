@@ -9,7 +9,7 @@ import { AdminLib } from "Util/Admin.sol";
 abstract contract TimedAdminFacet is BaseAdminFacet {
     /// Return the useId to use in the Timed library.
     /// @param add True if we want to add rights. False if we want to remove them.
-    function getRightsUseID(bool add) public view virtual returns (uint256);
+    function getRightsUseID(bool add) internal view virtual returns (uint256);
 
     /// The delay rights have to wait before being accepted.
     function getDelay() public view virtual returns (uint32);
@@ -18,7 +18,7 @@ abstract contract TimedAdminFacet is BaseAdminFacet {
     /// @param add True if we want to add these rights. False if we want to remove them.
     function submitRights(address newAdmin, uint256 rights, bool add) external {
         AdminLib.validateOwner();
-        Timed.memoryPrecommit(getRightsUseID(), abi.encode(newAdmin, rights));
+        Timed.memoryPrecommit(getRightsUseID(add), abi.encode(newAdmin, rights));
     }
 
     /// The owner can accept these rights changes.
@@ -29,17 +29,18 @@ abstract contract TimedAdminFacet is BaseAdminFacet {
         AdminLib.register(admin, newRights);
     }
 
-    /// The owner can veto rights additions.
-    function vetoRights() external {
-        AdminLib.validateOwner();
-        Timed.deleteEntry(getRightsUseID());
-    }
-
     /// Owner removes admin rights from an address in a time gated manner.
     function removeRights() external {
         AdminLib.validateOwner();
         bytes memory entry = Timed.fetchPrecommit(getRightsUseID(false), getDelay());
         (address admin, uint256 rights) = abi.decode(entry, (address, uint256));
         AdminLib.deregister(admin, rights);
+    }
+
+    /// The owner can veto rights additions.
+    /// @param add Whether the veto is for an add to rights or a remove.
+    function vetoRights(bool add) external {
+        AdminLib.validateOwner();
+        Timed.deleteEntry(getRightsUseID(add));
     }
 }
