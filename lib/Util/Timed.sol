@@ -125,7 +125,7 @@ library Timed {
     // Fetch the precommit data and error if it doesn't exist or the fetch is premature
     // according to the passed in delay. Delete the entry from the bookkeeping if returned.
     function fetchPrecommit(uint256 useId, uint32 delay) internal returns (bytes memory e) {
-        TimedEntry memory tde = fetch(useId);
+        TimedEntry memory tde = fetchAndDelete(useId); // delete will undo if reverted.
         if (tde.timestamp == 0)
             revert NoPrecommitFound(useId);
 
@@ -135,8 +135,6 @@ library Timed {
             revert PrematureParamUpdate(useId, expectedTime, actualTime);
 
         e = tde.entry;
-
-        deleteEntry(useId);
     }
 }
 

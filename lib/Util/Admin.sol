@@ -114,7 +114,6 @@ library AdminLib {
         uint256 existing = adReg.rights[admin];
         adReg.rights[admin] = existing & (~right);
         emit AdminRemoved(admin, right, existing);
-
     }
 }
 
