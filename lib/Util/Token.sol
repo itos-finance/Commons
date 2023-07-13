@@ -9,6 +9,7 @@ type Token is address;
 library TokenImpl {
     error TokenBalanceInvalid();
     error TokenTransferFailure();
+    error TokenApproveFailure();
 
     /// Wrap an address into a Token and verify it's a contract.
     // @dev It's important to verify addr is a contract before we
@@ -41,6 +42,17 @@ library TokenImpl {
             addr(self).call(abi.encodeWithSelector(IERC20Minimal.transfer.selector, recipient, amount));
         if (!(success && (data.length == 0 || abi.decode(data, (bool))))) {
             revert TokenTransferFailure();
+        }
+    }
+
+    /// Approve a future transferFrom of the given amount.
+    function approve(Token self, address spender, uint256 amount) internal {
+        if (amount == 0) return;
+
+        (bool success, bytes memory data) =
+        addr(self).call(abi.encodeWithSelector(IERC20Minimal.approve.selector, spender, amount));
+        if (!(success && (data.length == 0 || abi.decode(data, (bool))))) {
+            revert TokenApproveFailure();
         }
     }
 }
