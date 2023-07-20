@@ -150,10 +150,15 @@ library FullMath {
         unchecked {
             num = m0 * m1;
         }
-        if (num / m0 == m1) {
-            return num / denominator;
-        } else {
-            return mulDiv(m0, m1, denominator);
+        if (num == 0)
+            return 0;
+
+        unchecked {
+            if (num / m0 == m1) {
+                return num / denominator;
+            } else {
+                return mulDiv(m0, m1, denominator);
+            }
         }
     }
 }
