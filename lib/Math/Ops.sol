@@ -94,7 +94,9 @@ library X128 {
     /// @dev This rounds results down.
     function mul256(uint128 a, uint256 b) internal pure returns (uint256) {
         (uint256 bot, uint256 top) = FullMath.mul512(a, b);
-        return (bot >> 128) + (top << 128);
+        unchecked {
+            return (bot >> 128) + (top << 128);
+        }
     }
 
     /// Multiply a 256 bit number by a 128 bit number. Either of which is X128.
@@ -113,8 +115,23 @@ library X128 {
     /// @return top The top 128 bits of the result.
     function mul512(uint256 a, uint256 b) internal pure returns (uint256 bot, uint256 top) {
         (uint256 _bot, uint256 _top) = FullMath.mul512(a, b);
-        bot = (_bot >> 128) + (_top << 128);
-        top = _top >> 128;
+        unchecked {
+            bot = (_bot >> 128) + (_top << 128);
+            top = _top >> 128;
+        }
+    }
+
+    /// Multiply a 256 bit number by a 256 bit number, either of which is X128, to get 384 bits.
+    /// @dev This rounds results up.
+    /// @return bot The bottom 256 bits of the result.
+    /// @return top The top 128 bits of the result.
+    function mul512RoundUp(uint256 a, uint256 b) internal pure returns (uint256 bot, uint256 top) {
+        (uint256 _bot, uint256 _top) = FullMath.mul512(a, b);
+        uint256 modmax = SHIFT;
+        assembly {
+            bot := add(add(shr(128, _bot), shl(128, top)), gt(mod(_bot, modmax), 0))
+            top := shr(128, _top)
+        }
     }
 }
 
