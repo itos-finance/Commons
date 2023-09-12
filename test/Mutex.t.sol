@@ -5,9 +5,9 @@ import { console2 } from "forge-std/console2.sol";
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdCheats } from "forge-std/StdCheats.sol";
 
-import { Mutex, MutexImpl, MutexLib, Mutexed } from "Util/Mutex.sol";
+import { Mutex, MutexImpl, MutexLib, MutexBase } from "Util/Mutex.sol";
 
-contract MutexTest is PRBTest, StdCheats, Mutexed {
+contract MutexTest is PRBTest, StdCheats, MutexBase {
     using MutexImpl for Mutex;
 
     /// Call lock if relocking. Call unlock if unlocking
