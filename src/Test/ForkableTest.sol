@@ -22,6 +22,7 @@ import {Test} from "forge-std/Test.sol";
  */
 
 contract ForkableTest is Test {
+    bool public forking;
     string private _loadedJson;
     address private _deployer;
 
@@ -43,6 +44,22 @@ contract ForkableTest is Test {
         return _deployer;
     }
 
+    /* Modifiers */
+
+    /// Modifier for tests that can only be run when forking.
+    modifier forkOnly() {
+        if (forking) {
+            _;
+        }
+    }
+
+    /// Modifier for tests which cannot be fork tested.
+    modifier noFork() {
+        if (!forking) {
+            _;
+        }
+    }
+
     /* Json Internals */
     function loadJsonFile() internal {
         string memory pathToAddrs = vm.envString("DEPLOYED_ADDRS_PATH");
@@ -58,6 +75,7 @@ contract ForkableTest is Test {
         vm.startBroadcast(_deployer);
 
         try vm.activeFork() returns (uint256) {
+            forking = true;
             _forkSetup();
         } catch {
             _deploySetup();
