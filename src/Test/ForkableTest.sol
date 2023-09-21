@@ -72,7 +72,6 @@ contract ForkableTest is Test {
     function setUp() public {
         // Every call should come from the deployer due to permissions
         _deployer = vm.envOr("DEPLOYER_PUBLIC_KEY", address(this));
-        vm.startBroadcast(_deployer);
 
         try vm.activeFork() returns (uint256) {
             forking = true;
