@@ -2,6 +2,7 @@
 pragma solidity ^0.8.12; // For string concat
 
 import {Test} from "forge-std/Test.sol";
+import {EnvLoader} from "@Commons/Util/Env.sol";
 
 /**
  * ForkableTests rely on a json file that holds key value pairs of addresses of interest.
@@ -21,9 +22,8 @@ import {Test} from "forge-std/Test.sol";
  * necessary.
  */
 
-contract ForkableTest is Test {
+contract ForkableTest is EnvLoader, Test {
     bool public forking;
-    string private _loadedJson;
     address private _deployer;
 
     /* Interface Overrides */
@@ -34,10 +34,8 @@ contract ForkableTest is Test {
 
     /* Utility functions to be called by child classes */
 
-    // How child classes interact with the fork addresses
-    function getAddr(string memory key) internal view returns (address) {
-        return vm.parseJsonAddress(_loadedJson, string.concat(".", key));
-    }
+    // Main function used by tests to fetch on-chain contracts.
+    // function getAddr(string memory key) internal view returns (address);
 
     // Fetch the public key of the deployer
     function deployer() internal view returns (address) {
@@ -58,14 +56,6 @@ contract ForkableTest is Test {
         if (!forking) {
             _;
         }
-    }
-
-    /* Json Internals */
-    function loadJsonFile() internal {
-        string memory pathToAddrs = vm.envString("DEPLOYED_ADDRS_PATH");
-        string memory projectRoot = string.concat(vm.projectRoot(), "/");
-        string memory jsonPath = string.concat(projectRoot, pathToAddrs);
-        _loadedJson = vm.readFile(jsonPath);
     }
 
     /* Setup */
