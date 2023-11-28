@@ -19,7 +19,7 @@ contract Auto165 is IERC165 {
     // }
 
     /// @inheritdoc IERC165
-    function supportsInterface(bytes4 interfaceId) external view returns (bool) {
+    function supportsInterface(bytes4 interfaceId) external view virtual returns (bool) {
         return Auto165Lib.contains(interfaceId);
     }
 }
