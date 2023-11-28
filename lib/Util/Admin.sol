@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import { IERC173 } from "@Commons/ERC/interfaces/IERC173.sol";
+import {IERC173} from "src/ERC/interfaces/IERC173.sol";
 
 /**
  * @title Administrative Library
@@ -12,14 +12,15 @@ import { IERC173 } from "@Commons/ERC/interfaces/IERC173.sol";
  * It adheres to ERC-173 which establishes an owernship standard.
  * @dev Administrative right assignments should be time-gated and veto-able for modern
  * contracts.
- **/
+ *
+ */
 
 /// These are flags that can be joined so each is assigned its own hot bit.
 /// @dev These flags get the very top bits so that user specific flags are given the lower bits.
 library AdminFlags {
-    uint256 public constant NULL  = 0; // No clearance at all. Default value.
+    uint256 public constant NULL = 0; // No clearance at all. Default value.
     uint256 public constant OWNER = 0x8000000000000000000000000000000000000000000000000000000000000000;
-    uint256 public constant VETO  = 0x4000000000000000000000000000000000000000000000000000000000000000;
+    uint256 public constant VETO = 0x4000000000000000000000000000000000000000000000000000000000000000;
 }
 
 struct AdminRegistry {
@@ -27,7 +28,6 @@ struct AdminRegistry {
     // Of course it can assign rights to itself.
     // Thus it is probably desireable to qualify this ability, for example by time-gating it.
     address owner;
-
     // Rights are one hot encodings of permissions granted to users.
     // Each right should be a single bit in the uint256.
     mapping(address => uint256) rights;
@@ -86,8 +86,9 @@ library AdminLib {
     /// Called when there is no owner so one can be set for the first time.
     function initOwner(address owner) internal {
         AdminRegistry storage adReg = adminStore();
-        if (adReg.owner != address(0))
+        if (adReg.owner != address(0)) {
             revert CannotReinitializeOwner(adReg.owner);
+        }
         adReg.owner = owner;
     }
 
@@ -123,7 +124,7 @@ contract BaseAdminFacet is IERC173 {
         AdminLib.reassignOwner(_newOwner);
     }
 
-    function owner() external override view returns (address owner_) {
+    function owner() external view override returns (address owner_) {
         owner_ = AdminLib.getOwner();
     }
 

@@ -2,21 +2,17 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import { console2 } from "forge-std/console2.sol";
-import { PRBTest } from "@prb/test/PRBTest.sol";
-import { StdCheats } from "forge-std/StdCheats.sol";
+import {console2} from "forge-std/console2.sol";
+import {PRBTest} from "@prb/test/PRBTest.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
 
-import { RFTLib, RFTPayer, IRFTPayer, IERC165} from "@Commons/Util/RFT.sol";
-import { MintableERC20 } from "@Commons/ERC/ERC20.u.sol";
-import { ContractLib } from "@Commons/Util/Contract.sol";
-import { Auto165 } from "@Commons/ERC/Auto165.sol";
+import {RFTLib, RFTPayer, IRFTPayer, IERC165} from "src/Util/RFT.sol";
+import {MintableERC20} from "src/ERC/ERC20.u.sol";
+import {ContractLib} from "src/Util/Contract.sol";
+import {Auto165} from "src/ERC/Auto165.sol";
 
 contract MockRFTPayer is RFTPayer, Auto165 {
-    function tokenRequestCB(
-        address[] calldata tokens,
-        int256[] calldata requests,
-        bytes calldata
-    ) external {
+    function tokenRequestCB(address[] calldata tokens, int256[] calldata requests, bytes calldata) external {
         for (uint256 i = 0; i < tokens.length; ++i) {
             if (requests[i] > 0) {
                 MintableERC20(tokens[i]).mint(msg.sender, uint256(requests[i]));
@@ -26,11 +22,7 @@ contract MockRFTPayer is RFTPayer, Auto165 {
 }
 
 contract RFTNonPayer is RFTPayer, Auto165 {
-    function tokenRequestCB(
-        address[] calldata tokens,
-        int256[] calldata requests,
-        bytes calldata
-    ) external {}
+    function tokenRequestCB(address[] calldata tokens, int256[] calldata requests, bytes calldata) external {}
 }
 
 contract RFTMultiplePayer is RFTPayer, Auto165 {
@@ -40,17 +32,14 @@ contract RFTMultiplePayer is RFTPayer, Auto165 {
         helper = RFTTestHelper(_helper);
     }
 
-    function tokenRequestCB(
-        address[] calldata tokens,
-        int256[] calldata,
-        bytes calldata data
-    ) external {
+    function tokenRequestCB(address[] calldata tokens, int256[] calldata, bytes calldata data) external {
         (uint256 pay, int256 nextRequest, bytes memory nextData) = abi.decode(data, (uint256, int256, bytes));
         if (pay > 0) {
             MintableERC20(tokens[0]).mint(msg.sender, pay);
         }
-        if (nextRequest != 0)
+        if (nextRequest != 0) {
             helper.reentrantSettle(address(this), nextRequest, nextData);
+        }
     }
 }
 
@@ -61,11 +50,7 @@ contract RFTSettlePayer is RFTPayer, Auto165 {
         helper = RFTTestHelper(_helper);
     }
 
-    function tokenRequestCB(
-        address[] calldata,
-        int256[] calldata request,
-        bytes calldata data
-    ) external {
+    function tokenRequestCB(address[] calldata, int256[] calldata request, bytes calldata data) external {
         bool reentrant = abi.decode(data, (bool));
         if (reentrant) {
             helper.reentrantSettle(address(this), request[0], abi.encode(false));
@@ -75,11 +60,11 @@ contract RFTSettlePayer is RFTPayer, Auto165 {
     }
 }
 
-
 /// @dev We need this contract to run the revert calls due to a Foundry bug
 /// where if the testing contract reverts the test prematurely stops.
 contract RFTTestHelper {
     address public token;
+
     constructor(address _token) {
         token = _token;
     }
@@ -191,9 +176,7 @@ contract RFTTest is PRBTest, StdCheats {
         helper.settle(payer, 1 gwei);
 
         helper.settle(nonPayer, -1 gwei);
-        vm.expectRevert(abi.encodeWithSelector(
-            RFTLib.InsufficientReceive.selector, address(token), 1 gwei, 0
-        ));
+        vm.expectRevert(abi.encodeWithSelector(RFTLib.InsufficientReceive.selector, address(token), 1 gwei, 0));
         helper.settle(nonPayer, 1 gwei);
 
         // Test reentrancy
@@ -221,9 +204,7 @@ contract RFTTest is PRBTest, StdCheats {
 
         first = abi.encode(uint256(1 gwei), int256(0), nulldata);
         second = abi.encode(uint256(0), int256(1 gwei), first);
-        vm.expectRevert(abi.encodeWithSelector(
-            RFTLib.InsufficientReceive.selector, address(token), 2 gwei, 1 gwei
-        ));
+        vm.expectRevert(abi.encodeWithSelector(RFTLib.InsufficientReceive.selector, address(token), 2 gwei, 1 gwei));
         helper.reentrantSettle(multiplePayer, 1 gwei, second);
 
         // Test multiple sends.
@@ -244,9 +225,7 @@ contract RFTTest is PRBTest, StdCheats {
         // undersend
         first = abi.encode(uint256(1 gwei), int256(0), nulldata);
         second = abi.encode(uint256(0), -1 gwei, first);
-        vm.expectRevert(abi.encodeWithSelector(
-            RFTLib.InsufficientReceive.selector, address(token), 1 gwei, 0
-        ));
+        vm.expectRevert(abi.encodeWithSelector(RFTLib.InsufficientReceive.selector, address(token), 1 gwei, 0));
         helper.reentrantSettle(multiplePayer, 2 gwei, second);
 
         // Receive and send back.
@@ -262,9 +241,7 @@ contract RFTTest is PRBTest, StdCheats {
 
         first = abi.encode(uint256(0), int256(0), nulldata);
         second = abi.encode(uint256(0), int256(1 gwei), first);
-        vm.expectRevert(abi.encodeWithSelector(
-            RFTLib.InsufficientReceive.selector, address(token), 0, -1 gwei
-        ));
+        vm.expectRevert(abi.encodeWithSelector(RFTLib.InsufficientReceive.selector, address(token), 0, -1 gwei));
         helper.reentrantSettle(multiplePayer, -1 gwei, second);
 
         // Test reentrancy with settle.

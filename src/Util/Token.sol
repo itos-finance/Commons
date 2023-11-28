@@ -2,8 +2,8 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import { IERC20Minimal } from "@Commons/ERC/interfaces/IERC20Minimal.sol";
-import { ContractLib } from "./Contract.sol";
+import {IERC20Minimal} from "src/ERC/interfaces/IERC20Minimal.sol";
+import {ContractLib} from "./Contract.sol";
 
 type Token is address;
 
@@ -51,7 +51,7 @@ library TokenImpl {
         if (amount == 0) return;
 
         (bool success, bytes memory data) =
-        addr(self).call(abi.encodeWithSelector(IERC20Minimal.approve.selector, spender, amount));
+            addr(self).call(abi.encodeWithSelector(IERC20Minimal.approve.selector, spender, amount));
         if (!(success && (data.length == 0 || abi.decode(data, (bool))))) {
             revert TokenApproveFailure();
         }

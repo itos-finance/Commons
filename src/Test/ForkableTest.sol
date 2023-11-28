@@ -2,7 +2,7 @@
 pragma solidity ^0.8.12; // For string concat
 
 import {Test} from "forge-std/Test.sol";
-import {EnvLoader} from "@Commons/Util/Env.sol";
+import {EnvLoader} from "src/Util/Env.sol";
 
 /**
  * ForkableTests rely on a json file that holds key value pairs of addresses of interest.

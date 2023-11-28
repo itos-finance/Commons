@@ -2,11 +2,11 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import {Auto165Lib, IERC165} from "@Commons/ERC/Auto165.sol";
-import {IERC20} from "@Commons/ERC/interfaces/IERC20.sol";
-import {ContractLib} from "@Commons/Util/Contract.sol";
-import {TransferHelper} from "@Commons/Util/TransferHelper.sol";
-import {U256Ops} from "@Commons/Math/Ops.sol";
+import {Auto165Lib, IERC165} from "src/ERC/Auto165.sol";
+import {IERC20} from "src/ERC/interfaces/IERC20.sol";
+import {ContractLib} from "src/Util/Contract.sol";
+import {TransferHelper} from "src/Util/TransferHelper.sol";
+import {U256Ops} from "src/Math/Ops.sol";
 
 /* Interfaces to handle requests for tokens */
 interface IRFTPayer {
@@ -17,10 +17,7 @@ interface IRFTPayer {
      * Positive if requested, negative if paid to this contract.
      * @param data Additional information passed by the callee.
      */
-    function tokenRequestCB(
-        address[] calldata tokens,
-        int256[] calldata requests,
-        bytes calldata data) external;
+    function tokenRequestCB(address[] calldata tokens, int256[] calldata requests, bytes calldata data) external;
 }
 
 /* Utilities for handling requests for tokens */
@@ -76,15 +73,19 @@ library RFTLib {
      * as its a positive balance change from the caller's perspective. Negative means tokens will be sent.
      * @param data Any data to be sent to the payer if an RFT request is made.
      */
-    function settle(address payer, address[] memory tokens, int256[] memory balanceChanges, bytes memory data) internal {
+    function settle(address payer, address[] memory tokens, int256[] memory balanceChanges, bytes memory data)
+        internal
+    {
         TotalTransact storage transact = transactionStatus();
-        if (transact.status != ReentrancyStatus.Idle)
+        if (transact.status != ReentrancyStatus.Idle) {
             revert ReentrancyLocked();
+        }
 
         transact.status = ReentrancyStatus.Locked;
 
-        if (tokens.length != balanceChanges.length)
+        if (tokens.length != balanceChanges.length) {
             revert RFTLengthMismatch();
+        }
 
         uint256[] memory startBalances = new uint256[](tokens.length);
 
@@ -135,19 +136,23 @@ library RFTLib {
      * as its a positive balance change from the caller's perspective. Negative means tokens will be sent.
      * @param data Any data to be sent to the payer if an RFT request is made.
      */
-    function reentrantSettle(address payer, address[] memory tokens, int256[] memory balanceChanges, bytes memory data) internal {
+    function reentrantSettle(address payer, address[] memory tokens, int256[] memory balanceChanges, bytes memory data)
+        internal
+    {
         // We first setup the transaction we'll be handling.
         TotalTransact storage transact = transactionStatus();
-        if (transact.status == ReentrancyStatus.Locked)
+        if (transact.status == ReentrancyStatus.Locked) {
             revert ReentrancyLocked();
+        }
         bool outerContext = transact.status == ReentrancyStatus.Idle;
 
         if (outerContext) {
             transact.status = ReentrancyStatus.Transacting;
         }
 
-        if (tokens.length != balanceChanges.length)
+        if (tokens.length != balanceChanges.length) {
             revert RFTLengthMismatch();
+        }
 
         bool isRFTPayer = isSupported(payer);
         for (uint256 i = 0; i < tokens.length; ++i) {
@@ -240,12 +245,9 @@ library RFTLib {
      * This call does not handle reentrancy, and that should be handled by the caller.
      * If you want reentrancy handled, then RFTLib must do any token sending, and you should use the settle function.
      */
-    function requestOrTransfer(
-        address payer,
-        address[] memory tokens,
-        int256[] memory amounts,
-        bytes memory data
-    ) internal {
+    function requestOrTransfer(address payer, address[] memory tokens, int256[] memory amounts, bytes memory data)
+        internal
+    {
         if (isSupported(payer)) {
             IRFTPayer(payer).tokenRequestCB(tokens, amounts, data);
         } else {
@@ -262,9 +264,7 @@ library RFTLib {
      * @dev Will revert if payer is contract but doesn't support ERC165.
      * @return support True if RFTs are supported by the payer.
      */
-    function isSupported(
-        address payer
-    ) internal view returns (bool support) {
+    function isSupported(address payer) internal view returns (bool support) {
         return (ContractLib.isContract(payer) && IERC165(payer).supportsInterface(type(IRFTPayer).interfaceId));
     }
 }
