@@ -7,9 +7,7 @@ contract EnvLoader {
     VmSafe private constant vm = VmSafe(address(uint160(uint256(keccak256("hevm cheat code")))));
     string private _loadedJson;
 
-    constructor() {
-        loadJsonFile();
-    }
+    error EnvNotLoaded();
 
     /* Json Internals */
     function loadJsonFile() internal {
@@ -21,6 +19,8 @@ contract EnvLoader {
 
     // How child classes interact with the fork addresses
     function getAddr(string memory key) internal view returns (address) {
+        if (bytes(_loadedJson).length == 0)
+            revert EnvNotLoaded();
         return vm.parseJsonAddress(_loadedJson, string.concat(".", key));
     }
 }
