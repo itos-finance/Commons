@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { FullMath } from "Math/FullMath.sol";
+import {FullMath} from "./FullMath.sol";
 
 library X32 {
     // Multiply two 256 bit numbers to a 512 number, but one of the 256's is X32.
-    function mul512(uint256 a, uint256 b)
-    internal pure returns (uint256 bot, uint256 top) {
+    function mul512(uint256 a, uint256 b) internal pure returns (uint256 bot, uint256 top) {
         (uint256 rawB, uint256 rawT) = FullMath.mul512(a, b);
         bot = (rawB >> 32) + (rawT << 224);
         top = rawT >> 32;
@@ -15,8 +14,7 @@ library X32 {
 
 library X64 {
     // Multiply two 256 bit numbers to a 512 number, but one of the 256's is X32.
-    function mul512(uint256 a, uint256 b)
-    internal pure returns (uint256 bot, uint256 top) {
+    function mul512(uint256 a, uint256 b) internal pure returns (uint256 bot, uint256 top) {
         (uint256 rawB, uint256 rawT) = FullMath.mul512(a, b);
         bot = (rawB >> 64) + (rawT << 192);
         top = rawT >> 64;
@@ -25,9 +23,9 @@ library X64 {
 
 /**
  * @notice Utility for Q64.96 operations
- **/
+ *
+ */
 library Q64X96 {
-
     uint256 constant PRECISION = 96;
 
     uint256 constant SHIFT = 1 << 96;
@@ -37,7 +35,7 @@ library Q64X96 {
     /// Multiply an X96 precision number by an arbitrary uint256 number.
     /// Returns with the same precision as b.
     /// The result takes up 256 bits. Will error on overflow.
-    function mul(uint160 a, uint256 b, bool roundUp) internal pure returns(uint256 res) {
+    function mul(uint160 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
         (uint256 bot, uint256 top) = FullMath.mul512(a, b);
         if ((top >> 96) > 0) {
             revert Q64X96Overflow(a, b);
@@ -51,7 +49,7 @@ library Q64X96 {
     }
 
     /// Same as the regular mul but without checking for overflow
-    function unsafeMul(uint160 a, uint256 b, bool roundUp) internal pure returns(uint256 res) {
+    function unsafeMul(uint160 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
         (uint256 bot, uint256 top) = FullMath.mul512(a, b);
         assembly {
             res := add(shr(96, bot), shl(160, top))
@@ -68,8 +66,7 @@ library Q64X96 {
     /// Returns with the same precision as num.
     /// @dev uint160 is chosen because once the 96 bits of precision are cancelled out,
     /// the result is at most 256 bits.
-    function div(uint160 num, uint160 denom, bool roundUp)
-    internal pure returns (uint256 res) {
+    function div(uint160 num, uint160 denom, bool roundUp) internal pure returns (uint256 res) {
         uint256 fullNum = uint256(num) << PRECISION;
         res = fullNum / denom;
         if (roundUp) {
@@ -137,7 +134,6 @@ library X128 {
 
 /// Convenience library for interacting with Uint128s by other types.
 library U128Ops {
-
     function add(uint128 self, int128 other) public pure returns (uint128) {
         if (other >= 0) {
             return self + uint128(other);

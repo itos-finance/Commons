@@ -2,7 +2,7 @@
 // Copied from https://github.com/Uniswap/v3-periphery
 pragma solidity >=0.6.0;
 
-import {IERC20} from "src/ERC/interfaces/IERC20.sol";
+import {IERC20} from "../ERC/interfaces/IERC20.sol";
 
 library TransferHelper {
     /// @notice Transfers tokens from the targeted address to the given destination

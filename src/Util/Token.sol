@@ -2,7 +2,7 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import {IERC20Minimal} from "src/ERC/interfaces/IERC20Minimal.sol";
+import {IERC20Minimal} from "../ERC/interfaces/IERC20Minimal.sol";
 import {ContractLib} from "./Contract.sol";
 
 type Token is address;
