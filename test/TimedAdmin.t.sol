@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import { console2 } from "forge-std/console2.sol";
-import { PRBTest } from "@prb/test/PRBTest.sol";
-import { StdCheats } from "forge-std/StdCheats.sol";
+import {console2} from "forge-std/console2.sol";
+import {PRBTest} from "@prb/test/PRBTest.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
 
-import { TimedAdminFacet } from "Util/TimedAdmin.sol";
-import { AdminLib } from "Util/Admin.sol";
-import { Timed } from "Util/Timed.sol";
+import {TimedAdminFacet} from "../src/Util/TimedAdmin.sol";
+import {AdminLib} from "../src/Util/Admin.sol";
+import {Timed} from "../src/Util/Timed.sol";
 
 contract TimedTest is PRBTest, StdCheats {
     TestTimedFacet public facet;
@@ -26,21 +26,14 @@ contract TimedTest is PRBTest, StdCheats {
         // Can't accept too early
         vm.expectRevert(
             abi.encodeWithSelector(
-                Timed.PrematureParamUpdate.selector,
-                useId,
-                uint64(block.timestamp) + 1,
-                uint64(block.timestamp)
+                Timed.PrematureParamUpdate.selector, useId, uint64(block.timestamp) + 1, uint64(block.timestamp)
             )
         );
         facet.acceptRights();
 
         // solhint-disable
         // Can't submit another one before accepting this one.
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Timed.ExistingPrecommitFound.selector, useId
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Timed.ExistingPrecommitFound.selector, useId));
         facet.submitRights(address(this), 404, true);
 
         // Finally accept
@@ -59,11 +52,7 @@ contract TimedTest is PRBTest, StdCheats {
         assertEq(facet.adminRights(address(this)), 1339);
 
         // accept a non-existent remove
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Timed.NoPrecommitFound.selector, removeUseId
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Timed.NoPrecommitFound.selector, removeUseId));
         facet.removeRights();
 
         // Do a real remove
@@ -79,22 +68,14 @@ contract TimedTest is PRBTest, StdCheats {
         facet.submitRights(address(this), 2, true);
         skip(1);
         facet.acceptRights();
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Timed.NoPrecommitFound.selector, removeUseId
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Timed.NoPrecommitFound.selector, removeUseId));
         facet.removeRights();
 
         // Veto real remove.
         facet.submitRights(address(this), 1339, false);
         skip(1);
         facet.vetoRights(false);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Timed.NoPrecommitFound.selector, removeUseId
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Timed.NoPrecommitFound.selector, removeUseId));
         facet.removeRights();
 
         // Actually remove

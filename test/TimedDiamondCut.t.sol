@@ -1,26 +1,25 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import { console2 } from "forge-std/console2.sol";
-import { PRBTest } from "@prb/test/PRBTest.sol";
-import { StdCheats } from "forge-std/StdCheats.sol";
+import {console2} from "forge-std/console2.sol";
+import {PRBTest} from "@prb/test/PRBTest.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
 
-import { TimedDiamondCutFacet } from "Util/TimedDiamondCut.sol";
-import { ITimedDiamondCut } from "interfaces/ITimedDiamondCut.sol";
-import { IDiamond } from "Diamond/interfaces/IDiamond.sol";
-import { Diamond, DiamondArgs, FunctionNotFound } from "Diamond/Diamond.sol";
+import {TimedDiamondCutFacet} from "../src/Util/TimedDiamondCut.sol";
+import {ITimedDiamondCut} from "../src/interfaces/ITimedDiamondCut.sol";
+import {IDiamond} from "../src/Diamond/interfaces/IDiamond.sol";
+import {Diamond, DiamondArgs, FunctionNotFound} from "../src/Diamond/Diamond.sol";
 /* solhint-disable */
 
 // Shared storage utility contract.
 contract Storer {
-    bytes32 constant public TEST_DIAMOND_STORAGE_POSITION = keccak256("test");
+    bytes32 public constant TEST_DIAMOND_STORAGE_POSITION = keccak256("test");
 
     // Storage needed by the delegate calls
     struct Storage {
         // Used by TestCutFacet
         address approvedCaller;
         address approvedVetoer;
-
         // Used by TestFacet
         uint256 ret;
     }
@@ -52,13 +51,15 @@ contract TestCutFacet is TimedDiamondCutFacet, Storer {
     }
 
     function validateCaller() internal view override {
-        if (msg.sender != getStorage().approvedCaller)
+        if (msg.sender != getStorage().approvedCaller) {
             revert BadCaller();
+        }
     }
 
     function validateVeto() internal view override {
-        if (msg.sender != getStorage().approvedVetoer)
+        if (msg.sender != getStorage().approvedVetoer) {
             revert BadVeto();
+        }
     }
 }
 
@@ -107,10 +108,7 @@ contract TimedDiamondCutTest is PRBTest, StdCheats {
         TestFacet(diamond).isInstalled();
         // We can't confirm it yet.
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ITimedDiamondCut.PrematureCutConfirmation.selector,
-                uint64(block.timestamp + 1)
-            )
+            abi.encodeWithSelector(ITimedDiamondCut.PrematureCutConfirmation.selector, uint64(block.timestamp + 1))
         );
         caller.callConfirm(assignmentId);
         vm.warp(block.timestamp + 1);

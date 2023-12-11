@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import {console2} from "forge-std/console2.sol";
-import {PRBTest} from "@prb/test/PRBTest.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
+import {PRBTest} from "@prb/test/PRBTest.sol";
 
 import {FullMath} from "../src/Math/FullMath.sol";
 

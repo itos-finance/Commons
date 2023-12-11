@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import { console2 } from "forge-std/console2.sol";
-import { PRBTest } from "@prb/test/PRBTest.sol";
-import { StdCheats } from "forge-std/StdCheats.sol";
+import {console2} from "forge-std/console2.sol";
+import {PRBTest} from "@prb/test/PRBTest.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
 
-import { Timed, TimedEntry } from "Util/Timed.sol";
+import {Timed, TimedEntry} from "../src/Util/Timed.sol";
 
 contract TimedTest is PRBTest, StdCheats {
     TimedSender public sender;
@@ -81,19 +81,13 @@ contract TimedTest is PRBTest, StdCheats {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Timed.PrematureParamUpdate.selector,
-                1,
-                uint64(block.timestamp) + 10,
-                uint64(block.timestamp)
+                Timed.PrematureParamUpdate.selector, 1, uint64(block.timestamp) + 10, uint64(block.timestamp)
             )
         );
         Timed.fetchPrecommit(1, 10);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Timed.PrematureParamUpdate.selector,
-                1,
-                uint64(block.timestamp) + 5,
-                uint64(block.timestamp)
+                Timed.PrematureParamUpdate.selector, 1, uint64(block.timestamp) + 5, uint64(block.timestamp)
             )
         );
         // Roll but not far enough

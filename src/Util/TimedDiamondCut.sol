@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-/******************************************************************************\
-* Author: Terence An <terence@itos.fi>
-* Builds upon EIP-2535 Diamonds: https://eips.ethereum.org/EIPS/eip-253
-* by Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
-/******************************************************************************/
+/**
+ * \
+ * Author: Terence An <terence@itos.fi>
+ * Builds upon EIP-2535 Diamonds: https://eips.ethereum.org/EIPS/eip-253
+ * by Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
+ * /*****************************************************************************
+ */
 
-import { ITimedDiamondCut } from "../interfaces/ITimedDiamondCut.sol";
-import { IDiamond } from "Diamond/interfaces/IDiamond.sol";
-import { LibDiamond } from "Diamond/libraries/LibDiamond.sol";
+import {ITimedDiamondCut} from "../interfaces/ITimedDiamondCut.sol";
+import {IDiamond} from "../Diamond/interfaces/IDiamond.sol";
+import {LibDiamond} from "../Diamond/libraries/LibDiamond.sol";
 
 struct TimedCut {
     ITimedDiamondCut.FacetCut cut;
@@ -20,7 +22,7 @@ struct TimedCut {
 
 /// The Diamond storage used for time gating facet cuts.
 struct TimedCutStorage {
-    mapping (uint256 => TimedCut) assignments;
+    mapping(uint256 => TimedCut) assignments;
     uint256 counter;
 }
 
@@ -46,11 +48,11 @@ abstract contract TimedDiamondCutFacet is ITimedDiamondCut {
     function validateVeto() internal view virtual;
 
     /// @inheritdoc ITimedDiamondCut
-    function timedDiamondCut(
-        ITimedDiamondCut.FacetCut calldata _cut,
-        address _init,
-        bytes calldata _calldata
-    ) external override returns (uint256 assignmentId) {
+    function timedDiamondCut(ITimedDiamondCut.FacetCut calldata _cut, address _init, bytes calldata _calldata)
+        external
+        override
+        returns (uint256 assignmentId)
+    {
         validateCaller();
 
         TimedCutStorage storage tcs = timedCutStorage();
@@ -63,13 +65,7 @@ abstract contract TimedDiamondCutFacet is ITimedDiamondCut {
         tCut.timestamp = uint64(block.timestamp);
         tCut.initCalldata = _calldata;
 
-        emit ITimedDiamondCut.TimedDiamondCut(
-            uint64(block.timestamp) + delay(),
-            assignmentId,
-            _cut,
-            _init,
-            _calldata
-        );
+        emit ITimedDiamondCut.TimedDiamondCut(uint64(block.timestamp) + delay(), assignmentId, _cut, _init, _calldata);
     }
 
     /// @inheritdoc ITimedDiamondCut
@@ -78,22 +74,20 @@ abstract contract TimedDiamondCutFacet is ITimedDiamondCut {
         TimedCutStorage storage tcs = timedCutStorage();
         TimedCut storage tCut = tcs.assignments[assignmentId];
 
-        if (tCut.timestamp == 0)
+        if (tCut.timestamp == 0) {
             revert ITimedDiamondCut.CutAssignmentNotFound(assignmentId);
+        }
 
         // We check the delay now in case it has changed since the install.
         uint64 confirmTime = tCut.timestamp + delay();
-        if (uint64(block.timestamp) < confirmTime)
+        if (uint64(block.timestamp) < confirmTime) {
             revert ITimedDiamondCut.PrematureCutConfirmation(confirmTime);
+        }
 
         ITimedDiamondCut.FacetCut[] memory cuts = new ITimedDiamondCut.FacetCut[](1);
         cuts[0] = tCut.cut;
 
-        LibDiamond.diamondCut(
-            cuts,
-            tCut.init,
-            tCut.initCalldata
-        );
+        LibDiamond.diamondCut(cuts, tCut.init, tCut.initCalldata);
 
         emit IDiamond.DiamondCut(cuts, tCut.init, tCut.initCalldata);
 

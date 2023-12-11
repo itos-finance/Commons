@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import { BaseAdminFacet } from "Util/Admin.sol";
-import { Timed } from "Util/Timed.sol";
-import { AdminLib } from "Util/Admin.sol";
+import {BaseAdminFacet} from "../Util/Admin.sol";
+import {Timed} from "../Util/Timed.sol";
+import {AdminLib} from "../Util/Admin.sol";
 
 // A base class for admin facets that obey some opinionated time-gating.
 abstract contract TimedAdminFacet is BaseAdminFacet {
