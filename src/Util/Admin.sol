@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import {IERC173} from "src/ERC/interfaces/IERC173.sol";
+import {IERC173} from "../ERC/interfaces/IERC173.sol";
 
 /**
  * @title Administrative Library

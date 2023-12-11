@@ -2,11 +2,11 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import {Auto165Lib, IERC165} from "src/ERC/Auto165.sol";
-import {IERC20} from "src/ERC/interfaces/IERC20.sol";
-import {ContractLib} from "src/Util/Contract.sol";
-import {TransferHelper} from "src/Util/TransferHelper.sol";
-import {U256Ops} from "src/Math/Ops.sol";
+import {Auto165Lib, IERC165} from "../ERC/Auto165.sol";
+import {IERC20} from "../ERC/interfaces/IERC20.sol";
+import {ContractLib} from "../Util/Contract.sol";
+import {TransferHelper} from "../Util/TransferHelper.sol";
+import {U256Ops} from "../Math/Ops.sol";
 
 /* Interfaces to handle requests for tokens */
 interface IRFTPayer {
