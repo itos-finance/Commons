@@ -54,22 +54,10 @@ library SmoothRateCurveLib {
     }
 
     /// @notice Allows custom configs to be created with some safety checks.
-    function initializeConfig(SmoothRateCurveConfig storage self, uint120 invAlphaX120, uint72 betaX64, uint64 maxUtilX56) internal {
+    function initializeConfig(SmoothRateCurveConfig storage self, uint120 invAlphaX120, int72 betaX64, uint64 maxUtilX56, uint72 maxRateX64) internal {
         self.invAlphaX120 = invAlphaX120;
-        self.betaX64 = betaX64 + BETA_OFFSET;
+        self.betaX64 = uint72(betaX64 + int72(BETA_OFFSET));
         self.maxUtilX56 = maxUtilX56;
-    }
-
-    /// @notice Creates config with 0.5% base rate, 12% target rate at 80% target util, and 100% max util. Max fee of 9100%.
-    function initializeDefaultMoneyMarketConfig(SmoothRateCurveConfig storage self) internal {
-        self.invAlphaX120 = 38215304878816319171133364334755840;
-        self.betaX64 = 18008633901958949952;
-        self.maxUtilX56 = 72057594037927936;
-        self.maxRateX64 = 1678653710707569197056;
-    }
-
-    /// @notice Creates a config with 0% base rate, 0% target rate at 0% target util, and 50% max util.
-    function initializeDefaultAMMConfig(SmoothRateCurveConfig storage self) internal {
-
+        self.maxRateX64 = maxRateX64;
     }
 }
