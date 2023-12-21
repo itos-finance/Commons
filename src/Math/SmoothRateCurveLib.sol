@@ -1,38 +1,75 @@
 // SPDX-License-Identifier: BSL-1.1
+// Copyright Itos Inc 2023 
 pragma solidity ^0.8.13;
 
-/// @dev We use lower precision here than in fee calculator to accomodate
-/// maxUtils that are over 1 (which avoids div by 0).
-/// Plus precision is not as important in this rate.
+import "forge-std/console.sol";
+
+// Smooth Rate Curve Equations
+// q - utilization ratio
+// F(q) - fee rate is a hyperbolic function of the utilization ratio
+//
+// Parameters
+// f_b - base fee rate
+// f_t - target fee rate 
+// f_m - maximum fee rate 
+// q_t - target utilization 
+// q_m - max utilization 
+//
+// where 
+// f_b, f_t, f_b exist in R 
+// q, q_t, q_m exist in [0, 1]
+//
+// alpha =  q_t / (q_m * (q_m - q_t) * (f_t - f_b))
+// beta = f_b - 1 / (alpha * q_m)
+//
+// F(q) = min(beta + 1 / (alpha * (q_m - q)), f_m)
+
+// alpha [10_000, 0]
+
+// SPR factor 31536000 = 365 * 24 * 60 * 60
+// APR of 0.001% = 0.00001
+// as a SPR = 0.00001 / 31536000 =  0.00000000000031709791983764586504312531709791983764586504312531709791983 
+
 struct SmoothRateCurveConfig {
-    uint120 invAlphaX120; // Always less than 1
-
-    // We assume this value has already had the BETA_OFFSET added to it.
-    // Otherwise it can be negative.
-    uint72 betaX64; // Give it the extra bits so I don't have to think as hard.
-
-    uint64 maxUtilX56; // Will be every so slightly greater than 1
-} // 256 bits
+    uint120 invAlphaX120;
+    uint72 betaX64; // inludes the BETA_OFFSET, otherwise value could be negative
+    uint64 maxUtilX56;
+    uint72 maxRateX64;
+}
 
 library SmoothRateCurveLib {
-    uint120 public constant DEFAULT_INV_ALPHA_X120 = 3242783188242379110212435968; // (3242783188242379110212435968 / 2**120) = 0.0000000024395989239810580360675110189738745702925371006131172180175
-    uint72 public constant DEFAULT_BETA_X64 = 18446744031676564409; // (18446744031676564409 / 2**64) 0.9999999977213871
-    uint64 public constant DEFAULT_MAX_UTIL_X56 = 72129651631965856; // (72129651631965856 / 2**56) = 1.001 or 100.1%
-
     /// We use a beta offset so we can do all our operations in uint.
     uint72 private constant BETA_OFFSET = 1 << 64;
 
-    /// @param utilX56 The utilization percentage in X56 format.
-    /// @return sprX64 The SPR (seconds percentage rate) in X64 format.
-    function calculateRate(SmoothRateCurveConfig storage self, uint64 utilX56) public view returns (uint64 sprX64) {
-        // We know our util can't go over 1 due to liquidity constraints.
-        // So we set our maxUtil to be slightly greater than 1 to avoid a divide by 0.
-        sprX64 = uint64(self.betaX64 + self.invAlphaX120 / (self.maxUtilX56 - utilX56) - BETA_OFFSET);
+    function calculateRateX64(SmoothRateCurveConfig storage self, uint64 utilX56) internal view returns (uint72 rateX64) {
+        if (utilX56 >= self.maxUtilX56) {
+            utilX56 = self.maxUtilX56 - 1;
+        }
+
+        uint72 calculatedRateX64 = uint72(self.betaX64 + self.invAlphaX120 / (self.maxUtilX56 - utilX56) - BETA_OFFSET);
+        if (calculatedRateX64 > self.maxRateX64) {
+            return self.maxRateX64;
+        }
+        return calculatedRateX64;
     }
 
-    function defaultConfig() public pure returns (SmoothRateCurveConfig memory config) {
-        config.invAlphaX120 = DEFAULT_INV_ALPHA_X120;
-        config.betaX64 = DEFAULT_BETA_X64;
-        config.maxUtilX56 = DEFAULT_MAX_UTIL_X56;
+    /// @notice Allows custom configs to be created with some safety checks.
+    function initializeConfig(SmoothRateCurveConfig storage self, uint120 invAlphaX120, uint72 betaX64, uint64 maxUtilX56) internal {
+        self.invAlphaX120 = invAlphaX120;
+        self.betaX64 = betaX64 + BETA_OFFSET;
+        self.maxUtilX56 = maxUtilX56;
+    }
+
+    /// @notice Creates config with 0.5% base rate, 12% target rate at 80% target util, and 100% max util. Max fee of 9100%.
+    function initializeDefaultMoneyMarketConfig(SmoothRateCurveConfig storage self) internal {
+        self.invAlphaX120 = 38215304878816319171133364334755840;
+        self.betaX64 = 18008633901958949952;
+        self.maxUtilX56 = 72057594037927936;
+        self.maxRateX64 = 1678653710707569197056;
+    }
+
+    /// @notice Creates a config with 0% base rate, 0% target rate at 0% target util, and 50% max util.
+    function initializeDefaultAMMConfig(SmoothRateCurveConfig storage self) internal {
+
     }
 }

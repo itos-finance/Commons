@@ -2,20 +2,48 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
 
 import { SmoothRateCurveLib, SmoothRateCurveConfig } from "../src/Math/SmoothRateCurveLib.sol";
 
 contract SmoothRateCurveLibTest is Test {
-    SmoothRateCurveConfig curveConfig;
+    using SmoothRateCurveLib for SmoothRateCurveConfig;
+
+    SmoothRateCurveConfig private defaultConfig;
 
     function setUp() public {
-        curveConfig = SmoothRateCurveLib.defaultConfig();
+        defaultConfig.initializeDefaultMoneyMarketConfig();
     }
 
-    function testDefaultConfig() public {
-        SmoothRateCurveConfig memory config = SmoothRateCurveLib.defaultConfig();
-        assertEq(config.invAlphaX120, 3242783188242379110212435968);
-        assertEq(config.betaX64, 18446744031676564409);
-        assertEq(config.maxUtilX56, 72129651631965856);
+    function testDefaultConfigZeroUtilization() public {
+        uint72 rateX64 = defaultConfig.calculateRateX64(0);
+        assertEq(rateX64, 92233720368547776); // 0.005000000000000001
     }
+
+    function testDefaultConfigTargetUtilization() public {
+        uint72 rateX64 = defaultConfig.calculateRateX64(14411518807585588); // 80%
+        assertEq(rateX64, 224819693398335145); // expected 0.12 , actual 0.012187499999999999
+    }
+
+    function testDefaultConfigFiftyUtilization() public {
+        uint72 rateX64 = defaultConfig.calculateRateX64(36028797018963968); // 50%
+        assertEq(rateX64, 622577612487697216); // expected 0.03374999999999999 , actual 0.03374999999999999
+    }
+
+    function testDefaultConfigNearMaxUtilization() public {
+        // without max limit, this would have been 91.47625 ~9147%
+        uint72 rateX64 = defaultConfig.calculateRateX64((1 << 56) - 1);
+        assertEq(rateX64, 1678653710707569197056); // expected 91, actual 91
+    }
+
+    function testDefaultConfigAtOneHundredUtilization() public {
+        uint72 rateX64 = defaultConfig.calculateRateX64((1 << 56)); // 100%
+        assertEq(rateX64, 1678653710707569197056); // expected 91, actual 91
+    }
+
+    function testDefaultConfigOverMaxUtilization() public {
+        uint72 rateX64 = defaultConfig.calculateRateX64((2 << 56)); // 200% but max is 100%
+        assertEq(rateX64, 1678653710707569197056); // expected 91, actual 91
+    }
+
 }
