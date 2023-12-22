@@ -2,8 +2,6 @@
 // Copyright Itos Inc 2023 
 pragma solidity ^0.8.13;
 
-import "forge-std/console.sol";
-
 // Smooth Rate Curve Equations
 // q - utilization ratio
 // F(q) - fee rate is a hyperbolic function of the utilization ratio
@@ -44,6 +42,7 @@ library SmoothRateCurveLib {
     error BetaOverflowsOffset(int128 betaX64);
 
     function calculateRateX64(SmoothRateCurveConfig storage self, uint128 utilX64) internal view returns (uint128 rateX64) {
+        // prevent jumping to the max rate if there's a gap between that and the curve
         if (utilX64 >= self.maxUtilX64) {
             utilX64 = self.maxUtilX64 - 1;
         }
@@ -56,13 +55,13 @@ library SmoothRateCurveLib {
     }
 
     /// @notice Allows custom configs to be created with some safety checks.
-    function initializeConfig(SmoothRateCurveConfig storage self, uint120 invAlphaX120, int128 betaX64, uint128 maxUtilX64, uint128 maxRateX64) internal {
+    function initializeConfig(SmoothRateCurveConfig storage self, uint128 invAlphaX128, int128 betaX64, uint128 maxUtilX64, uint128 maxRateX64) internal {
         int128 betaWithOffset = betaX64 + int128(BETA_OFFSET);
         if (betaWithOffset < 0) {
             revert BetaOverflowsOffset(betaX64);
         }
-        
-        self.invAlphaX128 = invAlphaX120;
+
+        self.invAlphaX128 = invAlphaX128;
         self.betaX64 = uint128(betaWithOffset);
         self.maxUtilX64 = maxUtilX64;
         self.maxRateX64 = maxRateX64;
