@@ -31,22 +31,22 @@ import "forge-std/console.sol";
 // as a SPR = 0.00001 / 31536000 =  0.00000000000031709791983764586504312531709791983764586504312531709791983 
 
 struct SmoothRateCurveConfig {
-    uint120 invAlphaX120;
-    uint72 betaX64; // inludes the BETA_OFFSET, otherwise value could be negative
-    uint64 maxUtilX56;
-    uint72 maxRateX64;
+    uint128 invAlphaX128;
+    uint128 betaX64; // inludes the BETA_OFFSET, otherwise value could be negative
+    uint128 maxUtilX64;
+    uint128 maxRateX64;
 }
 
 library SmoothRateCurveLib {
     /// We use a beta offset so we can do all our operations in uint.
-    uint72 private constant BETA_OFFSET = 1 << 64;
+    uint128 private constant BETA_OFFSET = 1 << 64;
 
-    function calculateRateX64(SmoothRateCurveConfig storage self, uint64 utilX56) internal view returns (uint72 rateX64) {
-        if (utilX56 >= self.maxUtilX56) {
-            utilX56 = self.maxUtilX56 - 1;
+    function calculateRateX64(SmoothRateCurveConfig storage self, uint128 utilX64) internal view returns (uint128 rateX64) {
+        if (utilX64 >= self.maxUtilX64) {
+            utilX64 = self.maxUtilX64 - 1;
         }
 
-        uint72 calculatedRateX64 = uint72(self.betaX64 + self.invAlphaX120 / (self.maxUtilX56 - utilX56) - BETA_OFFSET);
+        uint128 calculatedRateX64 = self.betaX64 + self.invAlphaX128 / (self.maxUtilX64 - utilX64) - BETA_OFFSET;
         if (calculatedRateX64 > self.maxRateX64) {
             return self.maxRateX64;
         }
@@ -54,10 +54,10 @@ library SmoothRateCurveLib {
     }
 
     /// @notice Allows custom configs to be created with some safety checks.
-    function initializeConfig(SmoothRateCurveConfig storage self, uint120 invAlphaX120, int72 betaX64, uint64 maxUtilX56, uint72 maxRateX64) internal {
-        self.invAlphaX120 = invAlphaX120;
-        self.betaX64 = uint72(betaX64 + int72(BETA_OFFSET));
-        self.maxUtilX56 = maxUtilX56;
+    function initializeConfig(SmoothRateCurveConfig storage self, uint120 invAlphaX120, int128 betaX64, uint128 maxUtilX64, uint128 maxRateX64) internal {
+        self.invAlphaX128 = invAlphaX120;
+        self.betaX64 = uint128(betaX64 + int128(BETA_OFFSET));
+        self.maxUtilX64 = maxUtilX64;
         self.maxRateX64 = maxRateX64;
     }
 }
