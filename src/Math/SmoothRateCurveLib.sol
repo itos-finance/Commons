@@ -41,6 +41,8 @@ library SmoothRateCurveLib {
     /// We use a beta offset so we can do all our operations in uint.
     uint128 private constant BETA_OFFSET = 1 << 64;
 
+    error BetaOverflowsOffset(int128 betaX64);
+
     function calculateRateX64(SmoothRateCurveConfig storage self, uint128 utilX64) internal view returns (uint128 rateX64) {
         if (utilX64 >= self.maxUtilX64) {
             utilX64 = self.maxUtilX64 - 1;
@@ -55,8 +57,13 @@ library SmoothRateCurveLib {
 
     /// @notice Allows custom configs to be created with some safety checks.
     function initializeConfig(SmoothRateCurveConfig storage self, uint120 invAlphaX120, int128 betaX64, uint128 maxUtilX64, uint128 maxRateX64) internal {
+        int128 betaWithOffset = betaX64 + int128(BETA_OFFSET);
+        if (betaWithOffset < 0) {
+            revert BetaOverflowsOffset(betaX64);
+        }
+        
         self.invAlphaX128 = invAlphaX120;
-        self.betaX64 = uint128(betaX64 + int128(BETA_OFFSET));
+        self.betaX64 = uint128(betaWithOffset);
         self.maxUtilX64 = maxUtilX64;
         self.maxRateX64 = maxRateX64;
     }
