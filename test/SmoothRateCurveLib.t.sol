@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSL-1.1
-// Copyright Itos Inc 2023 
+// Copyright Itos Inc 2023
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
@@ -15,27 +15,27 @@ contract SmoothRateCurveLibTest is Test {
     SmoothRateCurveConfig private borrowPowerConfig;
     SmoothRateCurveConfig private internalBorrowerSPRConfig;
 
-    uint128 constant private ZERO_PERCENT_X64 = 0;
-    uint128 constant private TWENTY_PERCENT_X64 = 3689348814741910528;   // (0.2 * 2**64 = 3689348814741910528)
-    uint128 constant private FIFTY_PERCENT_X64 = 9223372036854775808;    // (0.5 * 2**64 = 9223372036854775808) 
-    uint128 constant private SEVENTY_PERCENT_X64 = 12912720851596685312; // (0.7 * 2**64 = 12912720851596685312) 
-    uint128 constant private EIGHTY_PERCENT_X64 = 14757395258967642112;  // (0.8 * 2**64 = 14757395258967642112)
-    uint128 constant private ONE_HUNDRED_PERCENT_X64 = (1 << 64);
-    uint128 constant private ONE_HUNDRED_TWENTY_PERCENT_X64 = 22136092888451461120;
-    uint128 constant private TWO_HUNDRED_PERCENT_X64 = (2 << 64);
+    uint128 private constant ZERO_PERCENT_X64 = 0;
+    uint128 private constant TWENTY_PERCENT_X64 = 3689348814741910528; // (0.2 * 2**64 = 3689348814741910528)
+    uint128 private constant FIFTY_PERCENT_X64 = 9223372036854775808; // (0.5 * 2**64 = 9223372036854775808)
+    uint128 private constant SEVENTY_PERCENT_X64 = 12912720851596685312; // (0.7 * 2**64 = 12912720851596685312)
+    uint128 private constant EIGHTY_PERCENT_X64 = 14757395258967642112; // (0.8 * 2**64 = 14757395258967642112)
+    uint128 private constant ONE_HUNDRED_PERCENT_X64 = (1 << 64);
+    uint128 private constant ONE_HUNDRED_TWENTY_PERCENT_X64 = 22136092888451461120;
+    uint128 private constant TWO_HUNDRED_PERCENT_X64 = (2 << 64);
 
     function setUp() public {
         // base rate 0.5%, target rate 12%, target util 80%, max util 100%, max fee 9100% (as APRs)
         mmConfigSPR.initializeStorageConfig(
-            310220638285672831737560825856, 
-            -13892382412, 
-            18446744073709551616, 
+            310220638285672831737560825856,
+            -13892382412,
+            18446744073709551616,
             53229759979311 // translates to an APR of 90.99999999999905 instead of 91
         );
 
         // base rate 0.03%, target rate 0.3%, target util 50%, max util 100%, max fee 1% (as APRs)
         swapFeeSPRConfig.initializeStorageConfig(
-            29133764291176239522245509120, 
+            29133764291176239522245509120,
             -1403861801,
             18446744073709551616,
             58494241735 // translates to an APR of 0.0999999999991329 instead of 0.1
@@ -43,17 +43,17 @@ contract SmoothRateCurveLibTest is Test {
 
         // base rate 1, target rate 2, target util 70%, max util 120%, max fee 5
         borrowPowerConfig.initializeStorageConfig(
-            291670600217947238206207436531303448576, 
-            5270498306774159360, 
-            22136092888451461120, 
+            291670600217947238206207436531303448576,
+            5270498306774159360,
+            22136092888451461120,
             5 << 64
         );
 
         // base rate 0.5%, target rate 16%, target util 50%, max util 120%, max fee 1500% (as APRs)
         internalBorrowerSPRConfig.initializeStorageConfig(
-            2809789711637885816854168993792, 
-            -124007792479, 
-            22136092888451461120, 
+            2809789711637885816854168993792,
+            -124007792479,
+            22136092888451461120,
             8774136260326 // translates to an APR of 14.999999999999863 instead of 15
         );
     }
@@ -66,20 +66,10 @@ contract SmoothRateCurveLibTest is Test {
         uint128 maxUtilX64 = 18446744073709551616;
         uint128 maxRateX64 = 53229759979311;
 
-        emptyConfig.initializeStorageConfig(            
-            invAlphaX128, 
-            betaX64, 
-            maxUtilX64, 
-            maxRateX64
-        );
+        emptyConfig.initializeStorageConfig(invAlphaX128, betaX64, maxUtilX64, maxRateX64);
 
         SmoothRateCurveConfig memory memoryConfig;
-        memoryConfig.initializeMemoryConfig(
-            invAlphaX128, 
-            betaX64, 
-            maxUtilX64, 
-            maxRateX64
-        );
+        memoryConfig.initializeMemoryConfig(invAlphaX128, betaX64, maxUtilX64, maxRateX64);
 
         assertEq(emptyConfig.invAlphaX128, memoryConfig.invAlphaX128);
         assertEq(emptyConfig.betaX64, memoryConfig.betaX64);
@@ -117,7 +107,7 @@ contract SmoothRateCurveLibTest is Test {
         assertEq(emptyConfig.invAlphaX128, 1);
         assertEq(emptyConfig.betaX64, (1 << 64) - 2);
         assertEq(emptyConfig.maxUtilX64, 3);
-        assertEq(emptyConfig.maxRateX64, 4);   
+        assertEq(emptyConfig.maxRateX64, 4);
     }
 
     function testInitializeMemoryConfigNegativeBeta() public {
@@ -127,7 +117,7 @@ contract SmoothRateCurveLibTest is Test {
         assertEq(memoryConfig.invAlphaX128, 1);
         assertEq(memoryConfig.betaX64, (1 << 64) - 2);
         assertEq(memoryConfig.maxUtilX64, 3);
-        assertEq(memoryConfig.maxRateX64, 4);   
+        assertEq(memoryConfig.maxRateX64, 4);
     }
 
     function testRevertInitializeStorageConfigIfNegativeBetaOverflowsTheOffset() public {
@@ -168,7 +158,7 @@ contract SmoothRateCurveLibTest is Test {
     function testMMSPRAtTargetUtilization() public {
         uint128 rateX64 = mmConfigSPR.calculateRateX64(EIGHTY_PERCENT_X64);
         // translates to an APR of 0.11999999999895948 instead of 0.12
-        assertEq(rateX64, 70193090082); 
+        assertEq(rateX64, 70193090082);
     }
 
     function testMMSPRAtMaxUtilization() public {
@@ -181,7 +171,7 @@ contract SmoothRateCurveLibTest is Test {
         assertEq(rateX64, 53229759979311); // hits max fee rate
     }
 
-    // Swap Fee Tests 
+    // Swap Fee Tests
 
     function testSwapSPRAtZeroPercentUtilization() public {
         uint128 rateX64 = swapFeeSPRConfig.calculateRateX64(0);
@@ -192,13 +182,13 @@ contract SmoothRateCurveLibTest is Test {
     function testSwapSPRAtTwentyPercentUtilization() public {
         uint128 rateX64 = swapFeeSPRConfig.calculateRateX64(TWENTY_PERCENT_X64);
         // translates to an APR of 0.0009750000001347223 instead of 0.0009749999999999996
-        assertEq(rateX64, 570318857); 
+        assertEq(rateX64, 570318857);
     }
 
     // target util is at 50% for this config
     function testSwapSPRAtTargetUtilization() public {
         uint128 rateX64 = swapFeeSPRConfig.calculateRateX64(FIFTY_PERCENT_X64);
-         // translates to an APR of 0.0029999999998885085 instead of 0.003
+        // translates to an APR of 0.0029999999998885085 instead of 0.003
         assertEq(rateX64, 1754827252);
     }
 
@@ -218,7 +208,7 @@ contract SmoothRateCurveLibTest is Test {
         assertEq(rateX64, 58494241735); // hits max fee rate
     }
 
-    // Borrow Power Tests 
+    // Borrow Power Tests
 
     function testBorrowPowerAtZeroPercentUtilization() public {
         uint128 rateX64 = borrowPowerConfig.calculateRateX64(0);
@@ -272,18 +262,18 @@ contract SmoothRateCurveLibTest is Test {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(0);
         // translates to an APR of 0.0050000000003840375 instead of 0.005
         assertEq(rateX64, 2924712087);
-    } 
+    }
 
     function testInternalBorrowerSPRAtTwentyPercentUtilization() public {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(TWENTY_PERCENT_X64);
         // translates to an APR of 0.04840000000002481 instead of 0.04839999999999998
-        assertEq(rateX64, 28311213000); 
+        assertEq(rateX64, 28311213000);
     }
 
     // target util is at 50% for this config
     function testInternalBorrowerSPRAtTargetUtilization() public {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(FIFTY_PERCENT_X64);
-         // translates to an APR of 0.16000000000032222 instead of 0.16
+        // translates to an APR of 0.16000000000032222 instead of 0.16
         assertEq(rateX64, 93590786777);
     }
 
@@ -308,8 +298,8 @@ contract SmoothRateCurveLibTest is Test {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(TWO_HUNDRED_PERCENT_X64);
         assertEq(rateX64, 8774136260326); // hits max fee rate
     }
-    
-    // Other CalculateRateX64 Tests 
+
+    // Other CalculateRateX64 Tests
 
     function testMaxRateIsUsedWhenExceedingMaxUtilizationEvenIfThereIsAGapBetweenThatAndTheCurve() public {
         emptyConfig.initializeStorageConfig(1, 2, 3, 500);

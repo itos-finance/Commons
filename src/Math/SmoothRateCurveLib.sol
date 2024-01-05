@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSL-1.1
-// Copyright Itos Inc 2023 
+// Copyright Itos Inc 2023
 pragma solidity ^0.8.17;
 
 // Smooth Rate Curve Equations
@@ -8,13 +8,13 @@ pragma solidity ^0.8.17;
 //
 // Parameters
 // f_b - base fee rate
-// f_t - target fee rate 
-// f_m - maximum fee rate 
-// q_t - target utilization 
-// q_m - max utilization 
+// f_t - target fee rate
+// f_m - maximum fee rate
+// q_t - target utilization
+// q_m - max utilization
 //
-// where 
-// f_b, f_t, f_b exist in R 
+// where
+// f_b, f_t, f_b exist in R
 // q, q_t, q_m exist in [0, 1]
 //
 // alpha =  q_t / (q_m * (q_m - q_t) * (f_t - f_b))
@@ -26,7 +26,7 @@ pragma solidity ^0.8.17;
 
 // SPR factor 31536000 = 365 * 24 * 60 * 60
 // APR of 0.001% = 0.00001
-// as a SPR = 0.00001 / 31536000 =  0.00000000000031709791983764586504312531709791983764586504312531709791983 
+// as a SPR = 0.00001 / 31536000 =  0.00000000000031709791983764586504312531709791983764586504312531709791983
 
 struct SmoothRateCurveConfig {
     uint128 invAlphaX128;
@@ -41,7 +41,10 @@ library SmoothRateCurveLib {
 
     error BetaOverflowsOffset(int128 betaX64);
 
-    function calculateRateX64(SmoothRateCurveConfig storage self, uint128 utilX64) internal view returns (uint128 rateX64) {
+    function calculateRateX64(
+        SmoothRateCurveConfig storage self,
+        uint128 utilX64
+    ) internal view returns (uint128 rateX64) {
         if (utilX64 >= self.maxUtilX64) {
             return self.maxRateX64;
         }
@@ -54,7 +57,13 @@ library SmoothRateCurveLib {
     }
 
     /// @notice Allows custom configs to be created with some safety checks.
-    function initializeStorageConfig(SmoothRateCurveConfig storage self, uint128 invAlphaX128, int128 betaX64, uint128 maxUtilX64, uint128 maxRateX64) internal {
+    function initializeStorageConfig(
+        SmoothRateCurveConfig storage self,
+        uint128 invAlphaX128,
+        int128 betaX64,
+        uint128 maxUtilX64,
+        uint128 maxRateX64
+    ) internal {
         int128 betaWithOffset = betaX64 + int128(BETA_OFFSET);
         if (betaWithOffset < 0) {
             revert BetaOverflowsOffset(betaX64);
@@ -67,7 +76,13 @@ library SmoothRateCurveLib {
     }
 
     /// @notice Allows custom configs to be created with some safety checks.
-    function initializeMemoryConfig(SmoothRateCurveConfig memory self, uint128 invAlphaX128, int128 betaX64, uint128 maxUtilX64, uint128 maxRateX64) internal pure {
+    function initializeMemoryConfig(
+        SmoothRateCurveConfig memory self,
+        uint128 invAlphaX128,
+        int128 betaX64,
+        uint128 maxUtilX64,
+        uint128 maxRateX64
+    ) internal pure {
         int128 betaWithOffset = betaX64 + int128(BETA_OFFSET);
         if (betaWithOffset < 0) {
             revert BetaOverflowsOffset(betaX64);
