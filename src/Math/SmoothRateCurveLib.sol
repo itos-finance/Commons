@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSL-1.1
 // Copyright Itos Inc 2023 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 // Smooth Rate Curve Equations
 // q - utilization ratio
@@ -42,9 +42,8 @@ library SmoothRateCurveLib {
     error BetaOverflowsOffset(int128 betaX64);
 
     function calculateRateX64(SmoothRateCurveConfig storage self, uint128 utilX64) internal view returns (uint128 rateX64) {
-        // prevent jumping to the max rate if there's a gap between that and the curve
         if (utilX64 >= self.maxUtilX64) {
-            utilX64 = self.maxUtilX64 - 1;
+            return self.maxRateX64;
         }
 
         uint128 calculatedRateX64 = self.betaX64 + self.invAlphaX128 / (self.maxUtilX64 - utilX64) - BETA_OFFSET;
@@ -55,7 +54,20 @@ library SmoothRateCurveLib {
     }
 
     /// @notice Allows custom configs to be created with some safety checks.
-    function initializeConfig(SmoothRateCurveConfig storage self, uint128 invAlphaX128, int128 betaX64, uint128 maxUtilX64, uint128 maxRateX64) internal {
+    function initializeStorageConfig(SmoothRateCurveConfig storage self, uint128 invAlphaX128, int128 betaX64, uint128 maxUtilX64, uint128 maxRateX64) internal {
+        int128 betaWithOffset = betaX64 + int128(BETA_OFFSET);
+        if (betaWithOffset < 0) {
+            revert BetaOverflowsOffset(betaX64);
+        }
+
+        self.invAlphaX128 = invAlphaX128;
+        self.betaX64 = uint128(betaWithOffset);
+        self.maxUtilX64 = maxUtilX64;
+        self.maxRateX64 = maxRateX64;
+    }
+
+    /// @notice Allows custom configs to be created with some safety checks.
+    function initializeMemoryConfig(SmoothRateCurveConfig memory self, uint128 invAlphaX128, int128 betaX64, uint128 maxUtilX64, uint128 maxRateX64) internal pure {
         int128 betaWithOffset = betaX64 + int128(BETA_OFFSET);
         if (betaWithOffset < 0) {
             revert BetaOverflowsOffset(betaX64);
