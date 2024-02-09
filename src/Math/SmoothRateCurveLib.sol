@@ -40,11 +40,27 @@ library SmoothRateCurveLib {
     uint128 private constant BETA_OFFSET = 1 << 64;
 
     error BetaOverflowsOffset(int128 betaX64);
+    error MaxRateAboveCurve(uint128 maxRateX64, uint128 calculatedMaxRateX64);
 
-    function calculateRateX64(
+    function calculateRateX64Storage(
         SmoothRateCurveConfig storage self,
         uint128 utilX64
     ) internal view returns (uint128 rateX64) {
+        if (utilX64 >= self.maxUtilX64) {
+            return self.maxRateX64;
+        }
+
+        uint128 calculatedRateX64 = self.betaX64 + self.invAlphaX128 / (self.maxUtilX64 - utilX64) - BETA_OFFSET;
+        if (calculatedRateX64 > self.maxRateX64) {
+            return self.maxRateX64;
+        }
+        return calculatedRateX64;
+    }
+
+    function calculateRateX64Memory(
+        SmoothRateCurveConfig memory self,
+        uint128 utilX64
+    ) internal pure returns (uint128 rateX64) {
         if (utilX64 >= self.maxUtilX64) {
             return self.maxRateX64;
         }
@@ -73,6 +89,14 @@ library SmoothRateCurveLib {
         self.betaX64 = uint128(betaWithOffset);
         self.maxUtilX64 = maxUtilX64;
         self.maxRateX64 = maxRateX64;
+
+        // verify overflow does not occur at extremes
+        SmoothRateCurveLib.calculateRateX64Storage(self, 0);
+        uint128 maxCalculatedRate = SmoothRateCurveLib.calculateRateX64Storage(self, maxUtilX64 - 1);
+
+        if (maxRateX64 > maxCalculatedRate) {
+            revert MaxRateAboveCurve(maxRateX64, maxCalculatedRate);
+        }
     }
 
     /// @notice Allows custom configs to be created with some safety checks.
@@ -92,5 +116,13 @@ library SmoothRateCurveLib {
         self.betaX64 = uint128(betaWithOffset);
         self.maxUtilX64 = maxUtilX64;
         self.maxRateX64 = maxRateX64;
+
+        // verify overflow does not occur at extremes
+        SmoothRateCurveLib.calculateRateX64Memory(self, 0);
+        uint128 maxCalculatedRate = SmoothRateCurveLib.calculateRateX64Memory(self, maxUtilX64 - 1);
+
+        if (maxRateX64 > maxCalculatedRate) {
+            revert MaxRateAboveCurve(maxRateX64, maxCalculatedRate);
+        }
     }
 }
