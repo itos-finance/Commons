@@ -13,11 +13,32 @@ library X32 {
 }
 
 library X64 {
+    /// The two numbers are too large to fit the result into one uint256.
+    error Oversized(uint256 a, uint256 b);
+
+    uint256 constant public SHIFT = 1 << 64;
+
+    /// Multiply a 64 bit number by a 256 bit number. Either of which is X64.
+    function mul256(uint128 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
+        (uint256 bot, uint256 top) = FullMath.mul512(a, b);
+        uint256 modmax = SHIFT;
+        assembly {
+            res := add(add(shr(64, bot), shl(192, top)), and(roundUp, gt(mod(bot, modmax), 0)))
+        }
+    }
+
     // Multiply two 256 bit numbers to a 512 number, but one of the 256's is X32.
     function mul512(uint256 a, uint256 b) internal pure returns (uint256 bot, uint256 top) {
         (uint256 rawB, uint256 rawT) = FullMath.mul512(a, b);
         bot = (rawB >> 64) + (rawT << 192);
         top = rawT >> 64;
+    }
+
+    /// Multiply and round down after reducing by 2^64. Error if the result is too large.
+    function safeMul512(uint256 a, uint256 b) internal pure returns (uint256 res) {
+        uint256 top;
+        (res, top) = mul512(a, b);
+        if (top > 0) revert Oversized(a, b);
     }
 }
 
@@ -83,6 +104,9 @@ library X96 {
 }
 
 library X128 {
+    /// The two numbers are too large to fit the result into one uint256.
+    error Oversized(uint256 a, uint256 b);
+
     uint256 constant PRECISION = 128;
 
     uint256 constant SHIFT = 1 << 128;
@@ -129,6 +153,14 @@ library X128 {
             bot := add(add(shr(128, _bot), shl(128, top)), gt(mod(_bot, modmax), 0))
             top := shr(128, _top)
         }
+    }
+
+    /// mul512 but error if oversized.
+    function safeMul512(uint256 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
+        (uint256 bot, uint256 top) = roundUp? mul512RoundUp(a, b) : mul512(a, b);
+        if (top > 0)
+            revert Oversized(a, b);
+        return bot;
     }
 }
 
