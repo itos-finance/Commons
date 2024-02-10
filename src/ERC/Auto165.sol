@@ -6,7 +6,7 @@ import {IERC165} from "./interfaces/IERC165.sol";
 
 // A contract can comply with ERC165 by simply inheriting this contract.
 // Any other contracts it inherits from can indicate the supported interfaces
-// simply by calling Auto165Lib.addSupport in their constructor and it'll automatically
+// by calling Auto165Lib.addSupport in their constructor and it'll automatically
 // be incorporated into the supportsInterface call.
 contract Auto165 is IERC165 {
     // The following is just an example.
