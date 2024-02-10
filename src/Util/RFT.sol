@@ -72,9 +72,10 @@ library RFTLib {
      * @param balanceChanges The deltas we want in our balances for the given tokens. Positive means we receive tokens
      * as its a positive balance change from the caller's perspective. Negative means tokens will be sent.
      * @param data Any data to be sent to the payer if an RFT request is made.
+     * @return actualDeltas The balance changes of the given tokens.
      */
     function settle(address payer, address[] memory tokens, int256[] memory balanceChanges, bytes memory data)
-        internal
+        internal returns (int256[] memory actualDeltas)
     {
         TotalTransact storage transact = transactionStatus();
         if (transact.status != ReentrancyStatus.Idle) {
@@ -108,17 +109,15 @@ library RFTLib {
             IRFTPayer(payer).tokenRequestCB(tokens, balanceChanges, data);
         }
 
+        actualDeltas = new int256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; ++i) {
             address token = tokens[i];
 
             // Validate our balances.
-            int256 expectedDelta = balanceChanges[i];
-            // Adding is cheaper so add in the common case.
-            uint256 expectedBalance = U256Ops.add(startBalances[i], expectedDelta);
             uint256 finalBalance = IERC20(token).balanceOf(address(this));
-            if (finalBalance < expectedBalance) {
-                int256 actualDelta = U256Ops.sub(finalBalance, startBalances[i]);
-                revert InsufficientReceive(token, expectedDelta, actualDelta);
+            actualDeltas[i] = U256Ops.sub(finalBalance, startBalances[i]);
+            if (actualDeltas[i] < balanceChanges[i]) {
+                revert InsufficientReceive(token, balanceChanges[i], actualDeltas[i]);
             }
         }
 
@@ -135,6 +134,8 @@ library RFTLib {
      * @param balanceChanges The deltas we want in our balances for the given tokens. Positive means we receive tokens
      * as its a positive balance change from the caller's perspective. Negative means tokens will be sent.
      * @param data Any data to be sent to the payer if an RFT request is made.
+     * @dev This doesn't return the balance changes because in most cases it shouldn't be used.
+     * It would report the aggregate balance change which if relied upon, can be fooled.
      */
     function reentrantSettle(address payer, address[] memory tokens, int256[] memory balanceChanges, bytes memory data)
         internal
