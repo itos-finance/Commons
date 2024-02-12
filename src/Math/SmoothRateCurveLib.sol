@@ -42,9 +42,9 @@ library SmoothRateCurveLib {
     error BetaOverflowsOffset(int128 betaX64);
 
     function calculateRateX64(
-        SmoothRateCurveConfig storage self,
+        SmoothRateCurveConfig memory self,
         uint128 utilX64
-    ) internal view returns (uint128 rateX64) {
+    ) internal pure returns (uint128 rateX64) {
         if (utilX64 >= self.maxUtilX64) {
             return self.maxRateX64;
         }
