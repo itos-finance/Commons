@@ -158,7 +158,11 @@ contract RFTTest is PRBTest, StdCheats {
 
         // Request or fail
         assertFalse(RFTLib.isSupported(human));
+        // Non payer doesn't pay but still supports interface.
+        assertTrue(RFTLib.isSupported(nonPayer));
         assertTrue(RFTLib.isSupported(payer));
+        // This contract doesnt have ERC165, but doesn't error when checking support.
+        assertFalse(RFTLib.isSupported(address(this)));
     }
 
     function testSettle() public {

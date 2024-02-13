@@ -232,6 +232,7 @@ library RFTLib {
      * @notice Request tokens and indicate payments to a payer contract. This FORCES a request. We expect
      * a contract that is an IRFTPayer. This does not check for support the way transferOrRequest does.
      * @dev We simply INDICATE payments. The function caller is expect to actually do any payment transfers.
+     * TODO: Cheapen gas by not asserting if its a contract first. Just attempt the request with a low level call.
      */
     function request(address payer, address[] memory tokens, int256[] memory amounts, bytes memory data) internal {
         ContractLib.assertContract(payer);
@@ -245,6 +246,8 @@ library RFTLib {
      * @dev We simply INDICATE payments. The function caller is expect to actually do any payment transfers.
      * This call does not handle reentrancy, and that should be handled by the caller.
      * If you want reentrancy handled, then RFTLib must do any token sending, and you should use the settle function.
+     * TODO: Cheapen gas by not checking isSupported. Just attempt the request with a low level call, and on failure
+     * attempt a transfer from.
      */
     function requestOrTransfer(address payer, address[] memory tokens, int256[] memory amounts, bytes memory data)
         internal
@@ -262,10 +265,18 @@ library RFTLib {
 
     /**
      * @notice Check if a contract supports RFTs through ERC165.
-     * @dev Will revert if payer is contract but doesn't support ERC165.
      * @return support True if RFTs are supported by the payer.
      */
-    function isSupported(address payer) internal view returns (bool support) {
-        return (ContractLib.isContract(payer) && IERC165(payer).supportsInterface(type(IRFTPayer).interfaceId));
+    function isSupported(address payer) internal returns (bool support) {
+        if (!ContractLib.isContract(payer))
+            return false;
+
+        (bool success, bytes memory res) = payer.call(
+            abi.encodeWithSelector(IERC165.supportsInterface.selector, type(IRFTPayer).interfaceId));
+
+        if (!success)
+            return false;
+
+        return abi.decode(res, (bool));
     }
 }
