@@ -35,6 +35,16 @@ library TokenImpl {
         return abi.decode(data, (uint256));
     }
 
+    /// Query the balance of this token for another address.
+    function balanceOf(Token self, address owner) internal view returns (uint256) {
+        (bool success, bytes memory data) =
+            addr(self).staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, owner));
+        if (!(success && data.length >= 32)) {
+            revert TokenBalanceInvalid();
+        }
+        return abi.decode(data, (uint256));
+    }
+
     /// Transfer this token from caller to recipient.
     function transfer(Token self, address recipient, uint256 amount) internal {
         if (amount == 0) return; // Short circuit
