@@ -41,23 +41,11 @@ library SmoothRateCurveLib {
 
     error BetaOverflowsOffset(int128 betaX64);
     error MaxRateAboveCurve(uint128 maxRateX64, uint128 calculatedMaxRateX64);
+    error InvAlphaIsZero();
+    error MaxUtilIsZero();
+    error MaxRateIsZero();
 
-    function calculateRateX64Storage(
-        SmoothRateCurveConfig storage self,
-        uint128 utilX64
-    ) internal view returns (uint128 rateX64) {
-        if (utilX64 >= self.maxUtilX64) {
-            return self.maxRateX64;
-        }
-
-        uint128 calculatedRateX64 = self.betaX64 + self.invAlphaX128 / (self.maxUtilX64 - utilX64) - BETA_OFFSET;
-        if (calculatedRateX64 > self.maxRateX64) {
-            return self.maxRateX64;
-        }
-        return calculatedRateX64;
-    }
-
-    function calculateRateX64Memory(
+    function calculateRateX64(
         SmoothRateCurveConfig memory self,
         uint128 utilX64
     ) internal pure returns (uint128 rateX64) {
@@ -73,34 +61,7 @@ library SmoothRateCurveLib {
     }
 
     /// @notice Allows custom configs to be created with some safety checks.
-    function initializeStorageConfig(
-        SmoothRateCurveConfig storage self,
-        uint128 invAlphaX128,
-        int128 betaX64,
-        uint128 maxUtilX64,
-        uint128 maxRateX64
-    ) internal {
-        int128 betaWithOffset = betaX64 + int128(BETA_OFFSET);
-        if (betaWithOffset < 0) {
-            revert BetaOverflowsOffset(betaX64);
-        }
-
-        self.invAlphaX128 = invAlphaX128;
-        self.betaX64 = uint128(betaWithOffset);
-        self.maxUtilX64 = maxUtilX64;
-        self.maxRateX64 = maxRateX64;
-
-        // verify overflow does not occur at extremes
-        SmoothRateCurveLib.calculateRateX64Storage(self, 0);
-        uint128 maxCalculatedRate = SmoothRateCurveLib.calculateRateX64Storage(self, maxUtilX64 - 1);
-
-        if (maxRateX64 > maxCalculatedRate) {
-            revert MaxRateAboveCurve(maxRateX64, maxCalculatedRate);
-        }
-    }
-
-    /// @notice Allows custom configs to be created with some safety checks.
-    function initializeMemoryConfig(
+    function initializeConfig(
         SmoothRateCurveConfig memory self,
         uint128 invAlphaX128,
         int128 betaX64,
@@ -117,12 +78,27 @@ library SmoothRateCurveLib {
         self.maxUtilX64 = maxUtilX64;
         self.maxRateX64 = maxRateX64;
 
-        // verify overflow does not occur at extremes
-        SmoothRateCurveLib.calculateRateX64Memory(self, 0);
-        uint128 maxCalculatedRate = SmoothRateCurveLib.calculateRateX64Memory(self, maxUtilX64 - 1);
+        SmoothRateCurveLib.validate(self);
+    }
 
-        if (maxRateX64 > maxCalculatedRate) {
-            revert MaxRateAboveCurve(maxRateX64, maxCalculatedRate);
+    /// @notice Validates config passes safety checks.
+    function validate(SmoothRateCurveConfig memory self) internal pure {
+        if (self.invAlphaX128 == 0) {
+            revert InvAlphaIsZero();
+        }
+        if (self.maxUtilX64 == 0) {
+            revert MaxUtilIsZero();
+        }
+        if (self.maxRateX64 == 0) {
+            revert MaxRateIsZero();
+        }
+
+        // verify overflow does not occur at extremes
+        SmoothRateCurveLib.calculateRateX64(self, 0);
+        uint128 maxCalculatedRate = SmoothRateCurveLib.calculateRateX64(self, self.maxUtilX64 - 1);
+        if (self.maxRateX64 > maxCalculatedRate) {
+            revert MaxRateAboveCurve(self.maxRateX64, maxCalculatedRate);
         }
     }
+
 }
