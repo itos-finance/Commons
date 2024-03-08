@@ -26,112 +26,134 @@ contract SmoothRateCurveLibTest is Test {
 
     function setUp() public {
         // base rate 0.5%, target rate 12%, target util 80%, max util 100%, max fee 9100% (as APRs)
-        mmConfigSPR.initializeStorageConfig(
+        SmoothRateCurveConfig memory mmConfigSPRMem;
+        mmConfigSPRMem.initializeConfig(
             310220638285672831737560825856,
             -13892382412,
             18446744073709551616,
             53229759979311 // translates to an APR of 90.99999999999905 instead of 91
         );
+        mmConfigSPR = mmConfigSPRMem;
 
         // base rate 0.03%, target rate 0.3%, target util 50%, max util 100%, max fee 1% (as APRs)
-        swapFeeSPRConfig.initializeStorageConfig(
+        SmoothRateCurveConfig memory swapFeeSPRConfigMem;
+        swapFeeSPRConfigMem.initializeConfig(
             29133764291176239522245509120,
             -1403861801,
             18446744073709551616,
             58494241735 // translates to an APR of 0.0999999999991329 instead of 0.1
         );
+        swapFeeSPRConfig = swapFeeSPRConfigMem;
 
         // base rate 1, target rate 2, target util 70%, max util 120%, max fee 5
-        borrowPowerConfig.initializeStorageConfig(
+        SmoothRateCurveConfig memory borrowPowerConfigMem;
+        borrowPowerConfigMem.initializeConfig(
             291670600217947238206207436531303448576,
             5270498306774159360,
             22136092888451461120,
             5 << 64
         );
+        borrowPowerConfig = borrowPowerConfigMem;
 
         // base rate 0.5%, target rate 16%, target util 50%, max util 120%, max fee 1500% (as APRs)
-        internalBorrowerSPRConfig.initializeStorageConfig(
+        SmoothRateCurveConfig memory internalBorrowerSPRConfigMem;
+        internalBorrowerSPRConfigMem.initializeConfig(
             2809789711637885816854168993792,
             -124007792479,
             22136092888451461120,
             8774136260326 // translates to an APR of 14.999999999999863 instead of 15
         );
+        internalBorrowerSPRConfig = internalBorrowerSPRConfigMem;
     }
 
     // Initialization Tests
 
-    function testStorageAndMemoryInitializationAreEqualWhenGivenTheSameParams() public {
-        uint128 invAlphaX128 = 310220638285672831737560825856;
-        int128 betaX64 = -13892382412;
-        uint128 maxUtilX64 = 18446744073709551616;
-        uint128 maxRateX64 = 53229759979311;
-
-        emptyConfig.initializeStorageConfig(invAlphaX128, betaX64, maxUtilX64, maxRateX64);
-
+    function testInitializeConfigPositiveBeta() public {
         SmoothRateCurveConfig memory memoryConfig;
-        memoryConfig.initializeMemoryConfig(invAlphaX128, betaX64, maxUtilX64, maxRateX64);
-
-        assertEq(emptyConfig.invAlphaX128, memoryConfig.invAlphaX128);
-        assertEq(emptyConfig.betaX64, memoryConfig.betaX64);
-        assertEq(emptyConfig.maxUtilX64, memoryConfig.maxUtilX64);
-        assertEq(emptyConfig.maxRateX64, memoryConfig.maxRateX64);
-
-        assertEq(emptyConfig.invAlphaX128, invAlphaX128);
-        assertEq(emptyConfig.betaX64, uint128((1 << 64) + betaX64));
-        assertEq(emptyConfig.maxUtilX64, maxUtilX64);
-        assertEq(emptyConfig.maxRateX64, maxRateX64);
-    }
-
-    function testInitializeStorageConfigPositiveBeta() public {
-        emptyConfig.initializeStorageConfig(1, 2, 3, 4);
-
-        assertEq(emptyConfig.invAlphaX128, 1);
-        assertEq(emptyConfig.betaX64, 2 + (1 << 64));
-        assertEq(emptyConfig.maxUtilX64, 3);
-        assertEq(emptyConfig.maxRateX64, 4);
-    }
-
-    function testInitializeMemoryConfigPositiveBeta() public {
-        SmoothRateCurveConfig memory memoryConfig;
-        memoryConfig.initializeMemoryConfig(1, 2, 3, 4);
+        memoryConfig.initializeConfig(1, 2, 3, 3);
 
         assertEq(memoryConfig.invAlphaX128, 1);
         assertEq(memoryConfig.betaX64, 2 + (1 << 64));
         assertEq(memoryConfig.maxUtilX64, 3);
-        assertEq(memoryConfig.maxRateX64, 4);
+        assertEq(memoryConfig.maxRateX64, 3);
     }
 
-    function testInitializeStorageConfigNegativeBeta() public {
-        emptyConfig.initializeStorageConfig(1, -2, 3, 4);
-
-        assertEq(emptyConfig.invAlphaX128, 1);
-        assertEq(emptyConfig.betaX64, (1 << 64) - 2);
-        assertEq(emptyConfig.maxUtilX64, 3);
-        assertEq(emptyConfig.maxRateX64, 4);
-    }
-
-    function testInitializeMemoryConfigNegativeBeta() public {
+    function testInitializeConfigNegativeBeta() public {
         SmoothRateCurveConfig memory memoryConfig;
-        memoryConfig.initializeMemoryConfig(1, -2, 3, 4);
+        memoryConfig.initializeConfig(100, -2, 3, 4);
 
-        assertEq(memoryConfig.invAlphaX128, 1);
+        assertEq(memoryConfig.invAlphaX128, 100);
         assertEq(memoryConfig.betaX64, (1 << 64) - 2);
         assertEq(memoryConfig.maxUtilX64, 3);
         assertEq(memoryConfig.maxRateX64, 4);
     }
 
-    function testRevertInitializeStorageConfigIfNegativeBetaOverflowsTheOffset() public {
-        int128 beta = -(1 << 72);
-        vm.expectRevert(abi.encodeWithSelector(SmoothRateCurveLib.BetaOverflowsOffset.selector, beta));
-        emptyConfig.initializeStorageConfig(1, beta, 3, 4);
-    }
-
-    function testRevertInitializeMemoryConfigIfNegativeBetaOverflowsTheOffset() public {
+    function testRevertInitializeConfigIfNegativeBetaOverflowsTheOffset() public {
         SmoothRateCurveConfig memory memoryConfig;
 
         int128 beta = -(1 << 72);
         vm.expectRevert(abi.encodeWithSelector(SmoothRateCurveLib.BetaOverflowsOffset.selector, beta));
-        memoryConfig.initializeMemoryConfig(1, beta, 3, 4);
+        memoryConfig.initializeConfig(1, beta, 3, 4);
+    }
+
+    function testRevertInitializeConfigIfCalculationOverflowsAtZeroPercentUtilization() public {
+        SmoothRateCurveConfig memory memoryConfig;
+
+        int128 beta = -13892382412;
+        vm.expectRevert(stdError.arithmeticError);
+        memoryConfig.initializeConfig((1 << 128) - 1, beta, 1, 4);
+    }
+
+    function testRevertInitializeConfigIfCalculationOverflowsAtNearMaxUtilization() public {
+        SmoothRateCurveConfig memory memoryConfig;
+
+        int128 beta = -13892382412;
+        vm.expectRevert(stdError.arithmeticError);
+        memoryConfig.initializeConfig((1 << 128) - 1, beta, (1 << 128) - 1, 4);
+    }
+
+    function testRevertInitializeConfigIfMaxRateIsGreaterThanMaxCalculatedRate() public {
+        SmoothRateCurveConfig memory memoryConfig;
+
+        vm.expectRevert(abi.encodeWithSelector(SmoothRateCurveLib.MaxRateAboveCurve.selector, 4, 1));
+        memoryConfig.initializeConfig(1, 0, 1, 4);
+    }
+
+    // Validate Tests 
+
+    function testRevertValidateIfInvAlphaIsZero() public {
+        SmoothRateCurveConfig memory config = mmConfigSPR;
+        config.invAlphaX128 = 0;
+        vm.expectRevert(SmoothRateCurveLib.InvAlphaIsZero.selector);
+        config.validate();
+    }
+
+    function testRevertValidateIfMaxUtilIsZero() public {
+        SmoothRateCurveConfig memory config = mmConfigSPR;
+        config.maxUtilX64 = 0;
+        vm.expectRevert(SmoothRateCurveLib.MaxUtilIsZero.selector);
+        config.validate();
+    }
+
+    function testRevertValidateIfMaxRateIsZero() public {
+        SmoothRateCurveConfig memory config = mmConfigSPR;
+        config.maxRateX64 = 0;
+        vm.expectRevert(SmoothRateCurveLib.MaxRateIsZero.selector);
+        config.validate();
+    }
+
+    function testRevertValidateOverflowsAtUtilExtreme() public {
+        SmoothRateCurveConfig memory memoryConfig;
+
+        int128 beta = -13892382412;
+        vm.expectRevert(stdError.arithmeticError);
+        memoryConfig.initializeConfig((1 << 128) - 1, beta, 1, 4);
+    }
+
+    function testRevertValidateMaxRateAboveCurve() public {
+        SmoothRateCurveConfig memory config = mmConfigSPR;
+        vm.expectRevert(abi.encodeWithSelector(SmoothRateCurveLib.MaxRateAboveCurve.selector, 4, 1));
+        config.initializeConfig(1, 0, 1, 4);
     }
 
     // Money Market Tests (SPR)
@@ -297,13 +319,5 @@ contract SmoothRateCurveLibTest is Test {
     function testInternalBorrowerSPROverMaxUtilization() public {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(TWO_HUNDRED_PERCENT_X64);
         assertEq(rateX64, 8774136260326); // hits max fee rate
-    }
-
-    // Other CalculateRateX64 Tests
-
-    function testMaxRateIsUsedWhenExceedingMaxUtilizationEvenIfThereIsAGapBetweenThatAndTheCurve() public {
-        emptyConfig.initializeStorageConfig(1, 2, 3, 500);
-        uint128 rateX64 = emptyConfig.calculateRateX64(4);
-        assertEq(rateX64, 500);
     }
 }
