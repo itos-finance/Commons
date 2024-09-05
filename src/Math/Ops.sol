@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {FullMath} from "./FullMath.sol";
+import { FullMath } from "./FullMath.sol";
+import { MathUtils } from "./Utils.sol";
 
 library X32 {
     // Multiply two 256 bit numbers to a 512 number, but one of the 256's is X32.
@@ -16,7 +17,7 @@ library X64 {
     /// The two numbers are too large to fit the result into one uint256.
     error Oversized(uint256 a, uint256 b);
 
-    uint256 constant public SHIFT = 1 << 64;
+    uint256 public constant SHIFT = 1 << 64;
 
     /// Multiply a 64 bit number by a 256 bit number. Either of which is X64.
     function mul256(uint128 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
@@ -157,10 +158,48 @@ library X128 {
 
     /// mul512 but error if oversized.
     function safeMul512(uint256 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
-        (uint256 bot, uint256 top) = roundUp? mul512RoundUp(a, b) : mul512(a, b);
-        if (top > 0)
-            revert Oversized(a, b);
+        (uint256 bot, uint256 top) = roundUp ? mul512RoundUp(a, b) : mul512(a, b);
+        if (top > 0) revert Oversized(a, b);
         return bot;
+    }
+
+    /// Divide two numbers to get an X128 result.
+    /// @dev Will error on overflow.
+    /// Unlike full math, this gives an approximate answer that may be off by 2/128th of the result.
+    /// In return, the common case costs ~40 gas and at most this costs ~300 gas.
+    function divTo(uint256 a, uint256 b) internal pure returns (uint256 resX128) {
+        bool rev;
+        (resX128, rev) = tryDivTo(a, b);
+        if (rev) revert Oversized(a, b);
+    }
+
+    /// Attempt to divide a by b to get an X128 result. If the result is too large 0 and true is returned.
+    function tryDivTo(uint256 a, uint256 b) internal pure returns (uint256 resX128, bool overFlow) {
+        uint256 whole = a / b; // Whole result
+        if (whole >= SHIFT) return (0, true);
+        uint256 residual;
+        unchecked {
+            resX128 = whole << 128;
+            residual = a - whole * b;
+        }
+        if (residual < SHIFT) {
+            // The common case
+            unchecked {
+                resX128 = (residual << 128) / b;
+            }
+            return (resX128, false);
+        }
+
+        uint8 rMSB = MathUtils.msb(residual); // Could save 9 gas by making a tailor one for just the relevant 128 bits.
+        /// Residual greather or equal to SHIFT means rMSB >= 128.
+        uint8 shiftUp;
+        uint8 shiftDown;
+        unchecked {
+            shiftUp = 255 - rMSB;
+            shiftDown = 128 - shiftUp;
+        }
+        // These two shifts combine to add the X128 bits.
+        resX128 += (residual << shiftUp) / (b >> shiftDown);
     }
 }
 
