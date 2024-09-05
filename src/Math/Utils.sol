@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 library MathUtils {
     /// Constants for masking in calculating MSB.
-    uint256 public constant SHIFT128 = ~((1 << 128) - 1);
+    uint256 public constant SHIFT128 = ((1 << 128) - 1) << 128;
     uint256 public constant SHIFT64 = ((1 << 64) - 1) << 64;
     uint256 public constant SHIFT32 = ((1 << 32) - 1) << 32;
     uint256 public constant SHIFT16 = ((1 << 16) - 1) << 16;
