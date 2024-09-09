@@ -165,11 +165,14 @@ library LiquidityAmounts {
         if (sqrtRatioAX96 > sqrtRatioBX96) (sqrtRatioAX96, sqrtRatioBX96) = (sqrtRatioBX96, sqrtRatioAX96);
 
         return
-            FullMath.mulDivRoundingUp(
-                uint256(liquidity) << FixedPoint96.RESOLUTION,
-                sqrtRatioBX96 - sqrtRatioAX96,
-                sqrtRatioBX96
-            ) / sqrtRatioAX96;
+            UnsafeMath.divRoundingUp(
+                FullMath.mulDivRoundingUp(
+                    uint256(liquidity) << FixedPoint96.RESOLUTION,
+                    sqrtRatioBX96 - sqrtRatioAX96,
+                    sqrtRatioBX96
+                ),
+                sqrtRatioAX96
+            );
     }
 
     /// @notice Computes the requested amount to mint a position for a given amount of liquidity and a price range
@@ -184,11 +187,7 @@ library LiquidityAmounts {
     ) internal pure returns (uint256 amount1) {
         if (sqrtRatioAX96 > sqrtRatioBX96) (sqrtRatioAX96, sqrtRatioBX96) = (sqrtRatioBX96, sqrtRatioAX96);
 
-        return
-            UnsafeMath.divRoundingUp(
-                UnsafeMath.divRoundingUp(liquidity, sqrtRatioBX96 - sqrtRatioAX96),
-                FixedPoint96.Q96
-            );
+        return FullMath.mulDivRoundingUp(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96);
     }
 
     /// @notice Computes the token0 and token1 requested for a given amount of liquidity, the current
