@@ -5,22 +5,37 @@ import { FullMath } from "./FullMath.sol";
 import { MathUtils } from "./Utils.sol";
 
 library X32 {
+    /// The two numbers are too large to fit the result into one uint256.
+    error OversizedX32(uint256 a, uint256 b);
+
+    uint256 public constant SHIFT = 1 << 32;
+
     // Multiply two 256 bit numbers to a 512 number, but one of the 256's is X32.
     function mul512(uint256 a, uint256 b) internal pure returns (uint256 bot, uint256 top) {
         (uint256 rawB, uint256 rawT) = FullMath.mul512(a, b);
         bot = (rawB >> 32) + (rawT << 224);
         top = rawT >> 32;
     }
+
+    /// Multiply two numbers and reduce by 2^32. The result must fit in a 256 bit or it'll error.
+    function mul256(uint256 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
+        (uint256 bot, uint256 top) = FullMath.mul512(a, b);
+        uint256 modmax = SHIFT;
+        assembly {
+            res := add(add(shr(32, bot), shl(224, top)), and(roundUp, gt(mod(bot, modmax), 0)))
+        }
+    }
 }
 
 library X64 {
     /// The two numbers are too large to fit the result into one uint256.
-    error Oversized(uint256 a, uint256 b);
+    error OversizedX64(uint256 a, uint256 b);
 
     uint256 public constant SHIFT = 1 << 64;
 
-    /// Multiply a 64 bit number by a 256 bit number. Either of which is X64.
-    function mul256(uint128 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
+    /// Multiply two 256 numbers with X64 precision with your desired rounding.
+    /// @dev The result must fit in 256 bits or will give an incorrect answer.
+    function mul256(uint256 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
         (uint256 bot, uint256 top) = FullMath.mul512(a, b);
         uint256 modmax = SHIFT;
         assembly {
@@ -39,7 +54,7 @@ library X64 {
     function safeMul512(uint256 a, uint256 b) internal pure returns (uint256 res) {
         uint256 top;
         (res, top) = mul512(a, b);
-        if (top > 0) revert Oversized(a, b);
+        if (top > 0) revert OversizedX64(a, b);
     }
 }
 
@@ -102,6 +117,16 @@ library Q64X96 {
 library X96 {
     uint256 constant PRECISION = 96;
     uint256 constant SHIFT = 1 << 96;
+
+    /// Multiply two 256 numbers with X96 precision with your desired rounding.
+    /// @dev The result must fit in 256 bits or will silently give an incorrect answer.
+    function mul256(uint256 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
+        (uint256 bot, uint256 top) = FullMath.mul512(a, b);
+        uint256 modmax = SHIFT;
+        assembly {
+            res := add(add(shr(96, bot), shl(160, top)), and(roundUp, gt(mod(bot, modmax), 0)))
+        }
+    }
 }
 
 library X128 {
@@ -128,6 +153,16 @@ library X128 {
         uint256 modmax = SHIFT;
         assembly {
             res := add(add(shr(128, bot), shl(128, top)), gt(mod(bot, modmax), 0))
+        }
+    }
+
+    /// Multiply two 256 numbers with X128 precision with your desired rounding.
+    /// @dev The result must fit in 256 bits or will silently give an incorrect answer.
+    function mul256(uint256 a, uint256 b, bool roundUp) internal pure returns (uint256 res) {
+        (uint256 bot, uint256 top) = FullMath.mul512(a, b);
+        uint256 modmax = SHIFT;
+        assembly {
+            res := add(add(shr(128, bot), shl(128, top)), and(roundUp, gt(mod(bot, modmax), 0)))
         }
     }
 
