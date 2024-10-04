@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import {IERC173} from "../ERC/interfaces/IERC173.sol";
+import { IERC173 } from "../ERC/interfaces/IERC173.sol";
 
 /**
  * @title Administrative Library
@@ -76,6 +76,15 @@ library AdminLib {
     function validateRights(uint256 expected) internal view {
         AdminRegistry storage adReg = adminStore();
         uint256 actual = adReg.rights[msg.sender];
+        if (actual & expected != expected) {
+            revert InsufficientCredentials(msg.sender, expected, actual);
+        }
+    }
+
+    /// Revert if the target does not have the expected right.
+    function validateRights(address target, uint256 expected) internal view {
+        AdminRegistry storage adReg = adminStore();
+        uint256 actual = adReg.rights[target];
         if (actual & expected != expected) {
             revert InsufficientCredentials(msg.sender, expected, actual);
         }
