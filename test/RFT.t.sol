@@ -25,6 +25,27 @@ contract MockRFTPayer is RFTPayer, Auto165 {
     }
 }
 
+contract MockRFTDataPayer is RFTPayer, Auto165 {
+    bytes _cbData;
+    constructor(bytes memory data) {
+        _cbData = data;
+    }
+
+    function tokenRequestCB(
+        address[] calldata tokens,
+        int256[] calldata requests,
+        bytes calldata
+    ) external returns (bytes memory) {
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            if (requests[i] > 0) {
+                MintableERC20(tokens[i]).mint(msg.sender, uint256(requests[i]));
+            }
+        }
+
+        return _cbData;
+    }
+}
+
 contract RFTNonPayer is RFTPayer, Auto165 {
     function tokenRequestCB(
         address[] calldata tokens,
@@ -85,47 +106,51 @@ contract RFTTestHelper {
         token = _token;
     }
 
-    function request(address payer, int256 amount) external {
+    function request(address payer, int256 amount) external returns (bytes memory data) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
         bytes memory nulldata;
-        RFTLib.request(payer, tokens, amounts, nulldata);
+        return RFTLib.request(payer, tokens, amounts, nulldata);
     }
 
-    function requestOrTransfer(address payer, int256 amount) external {
+    function requestOrTransfer(address payer, int256 amount) external returns (bytes memory data) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
         bytes memory nulldata;
-        RFTLib.requestOrTransfer(payer, tokens, amounts, nulldata);
+        return RFTLib.requestOrTransfer(payer, tokens, amounts, nulldata);
     }
 
-    function settle(address payer, int256 amount) external {
+    function settle(address payer, int256 amount) external returns (int256[] memory actualDeltas, bytes memory data) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
         bytes memory nulldata;
-        RFTLib.settle(payer, tokens, amounts, nulldata);
+        return RFTLib.settle(payer, tokens, amounts, nulldata);
     }
 
-    function settle(address payer, int256 amount, bytes calldata data) external {
+    function settle(
+        address payer,
+        int256 amount,
+        bytes calldata data
+    ) external returns (int256[] memory actualDeltas, bytes memory cbData) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
-        RFTLib.settle(payer, tokens, amounts, data);
+        return RFTLib.settle(payer, tokens, amounts, data);
     }
 
-    function reentrantSettle(address payer, int256 amount, bytes memory insts) external {
+    function reentrantSettle(address payer, int256 amount, bytes memory insts) external returns (bytes memory data) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
-        RFTLib.reentrantSettle(payer, tokens, amounts, insts);
+        return RFTLib.reentrantSettle(payer, tokens, amounts, insts);
     }
 }
 
@@ -137,6 +162,7 @@ contract RFTTest is PRBTest, StdCheats {
     RFTTestHelper public helper;
     address public multiplePayer;
     address public settlePayer;
+    address public dataPayer;
 
     function setUp() public {
         token = new MintableERC20("eth", "ETH");
@@ -146,6 +172,7 @@ contract RFTTest is PRBTest, StdCheats {
         helper = new RFTTestHelper(address(token));
         multiplePayer = address(new RFTMultiplePayer(address(helper)));
         settlePayer = address(new RFTSettlePayer(address(helper)));
+        dataPayer = address(new MockRFTDataPayer(abi.encode(uint256(7))));
     }
 
     function testRequests() public {
@@ -283,5 +310,24 @@ contract RFTTest is PRBTest, StdCheats {
         helper.reentrantSettle(human, 1 ether, first);
         helper.reentrantSettle(human, -1 ether, first);
         helper.reentrantSettle(human, 1 ether, first);
+    }
+
+    function testHandleTokenRequestCBData() public {
+        (, bytes memory data) = helper.settle(dataPayer, 1 gwei);
+        uint256 result = abi.decode(data, (uint256));
+        assertEq(result, uint256(7));
+
+        data = helper.request(dataPayer, 1 gwei);
+        result = abi.decode(data, (uint256));
+        assertEq(result, uint256(7));
+
+        data = helper.requestOrTransfer(dataPayer, 1 gwei);
+        result = abi.decode(data, (uint256));
+        assertEq(result, uint256(7));
+
+        bytes memory nulldata;
+        data = helper.reentrantSettle(dataPayer, 1 gwei, nulldata);
+        result = abi.decode(data, (uint256));
+        assertEq(result, uint256(7));
     }
 }

@@ -16,7 +16,7 @@ interface IRFTPayer {
      * @param requests A list of tokens amounts for each token.
      * Positive if requested, negative if paid to this contract.
      * @param data Additional information passed by the callee.
-     * @return bytes memory that the caller of settle can use
+     * @return cbData bytes that the caller of settle can use
      */
     function tokenRequestCB(
         address[] calldata tokens,
