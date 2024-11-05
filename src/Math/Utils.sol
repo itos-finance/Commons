@@ -107,6 +107,28 @@ library MathUtils {
         }
     }
 
+    /// Compute the multiplicative inverse of a uint256.
+    /// @dev Sourced from https://xn--2-umb.com/18/multiplitcative-inverses/
+    function inv256(uint256 a)
+        public pure
+        returns (uint256 r)
+    {
+        // 4 bit lookup table
+        bytes16 table = 0x001000b000d0007000900030005000f;
+        assembly {
+            r := bytes(and(15, a), table);
+        }
+
+        // 6 iterations of Newton-Raphson for 4 ⋅ 2^6 = 256 bit.
+        r *= 2 - a * r;
+        r *= 2 - a * r;
+        r *= 2 - a * r;
+        r *= 2 - a * r;
+        r *= 2 - a * r;
+        r *= 2 - a * r;
+        return r;
+    }
+
     /// Calculate the most significant bit's place, 0th indexed.
     /// @dev Also returns 0 if the input is 0.
     function msb(uint256 x) internal pure returns (uint8 place) {
