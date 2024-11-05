@@ -2,17 +2,21 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import {console2} from "forge-std/console2.sol";
-import {PRBTest} from "@prb/test/PRBTest.sol";
-import {StdCheats} from "forge-std/StdCheats.sol";
+import { console2 } from "forge-std/console2.sol";
+import { PRBTest } from "@prb/test/PRBTest.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
 
-import {RFTLib, RFTPayer, IRFTPayer, IERC165} from "src/Util/RFT.sol";
-import {MintableERC20} from "src/ERC/ERC20.u.sol";
-import {ContractLib} from "src/Util/Contract.sol";
-import {Auto165} from "src/ERC/Auto165.sol";
+import { RFTLib, RFTPayer, IRFTPayer, IERC165 } from "src/Util/RFT.sol";
+import { MintableERC20 } from "src/ERC/ERC20.u.sol";
+import { ContractLib } from "src/Util/Contract.sol";
+import { Auto165 } from "src/ERC/Auto165.sol";
 
 contract MockRFTPayer is RFTPayer, Auto165 {
-    function tokenRequestCB(address[] calldata tokens, int256[] calldata requests, bytes calldata) external {
+    function tokenRequestCB(
+        address[] calldata tokens,
+        int256[] calldata requests,
+        bytes calldata
+    ) external returns (bytes memory cbData) {
         for (uint256 i = 0; i < tokens.length; ++i) {
             if (requests[i] > 0) {
                 MintableERC20(tokens[i]).mint(msg.sender, uint256(requests[i]));
@@ -22,7 +26,11 @@ contract MockRFTPayer is RFTPayer, Auto165 {
 }
 
 contract RFTNonPayer is RFTPayer, Auto165 {
-    function tokenRequestCB(address[] calldata tokens, int256[] calldata requests, bytes calldata) external {}
+    function tokenRequestCB(
+        address[] calldata tokens,
+        int256[] calldata requests,
+        bytes calldata
+    ) external returns (bytes memory cbData) {}
 }
 
 contract RFTMultiplePayer is RFTPayer, Auto165 {
@@ -32,7 +40,11 @@ contract RFTMultiplePayer is RFTPayer, Auto165 {
         helper = RFTTestHelper(_helper);
     }
 
-    function tokenRequestCB(address[] calldata tokens, int256[] calldata, bytes calldata data) external {
+    function tokenRequestCB(
+        address[] calldata tokens,
+        int256[] calldata,
+        bytes calldata data
+    ) external returns (bytes memory cbData) {
         (uint256 pay, int256 nextRequest, bytes memory nextData) = abi.decode(data, (uint256, int256, bytes));
         if (pay > 0) {
             MintableERC20(tokens[0]).mint(msg.sender, pay);
@@ -50,7 +62,11 @@ contract RFTSettlePayer is RFTPayer, Auto165 {
         helper = RFTTestHelper(_helper);
     }
 
-    function tokenRequestCB(address[] calldata, int256[] calldata request, bytes calldata data) external {
+    function tokenRequestCB(
+        address[] calldata,
+        int256[] calldata request,
+        bytes calldata data
+    ) external returns (bytes memory cbData) {
         bool reentrant = abi.decode(data, (bool));
         if (reentrant) {
             helper.reentrantSettle(address(this), request[0], abi.encode(false));
