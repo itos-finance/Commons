@@ -16,8 +16,13 @@ interface IRFTPayer {
      * @param requests A list of tokens amounts for each token.
      * Positive if requested, negative if paid to this contract.
      * @param data Additional information passed by the callee.
+     * @return cbData bytes that the caller of settle can use
      */
-    function tokenRequestCB(address[] calldata tokens, int256[] calldata requests, bytes calldata data) external;
+    function tokenRequestCB(
+        address[] calldata tokens,
+        int256[] calldata requests,
+        bytes calldata data
+    ) external returns (bytes memory cbData);
 }
 
 /* Utilities for handling requests for tokens */
@@ -79,7 +84,7 @@ library RFTLib {
         address[] memory tokens,
         int256[] memory balanceChanges,
         bytes memory data
-    ) internal returns (int256[] memory actualDeltas) {
+    ) internal returns (int256[] memory actualDeltas, bytes memory cbData) {
         TotalTransact storage transact = transactionStatus();
         if (transact.status != ReentrancyStatus.Idle) {
             revert ReentrancyLocked();
@@ -109,7 +114,7 @@ library RFTLib {
         }
         // If the payer is an RFTPayer, we make the request now.
         if (isRFTPayer) {
-            IRFTPayer(payer).tokenRequestCB(tokens, balanceChanges, data);
+            cbData = IRFTPayer(payer).tokenRequestCB(tokens, balanceChanges, data);
         }
 
         actualDeltas = new int256[](tokens.length);
@@ -145,7 +150,7 @@ library RFTLib {
         address[] memory tokens,
         int256[] memory balanceChanges,
         bytes memory data
-    ) internal {
+    ) internal returns (bytes memory cbData) {
         // We first setup the transaction we'll be handling.
         TotalTransact storage transact = transactionStatus();
         if (transact.status == ReentrancyStatus.Locked) {
@@ -203,7 +208,7 @@ library RFTLib {
         }
         // If the payer is an RFTPayer, we make the request now.
         if (isRFTPayer) {
-            IRFTPayer(payer).tokenRequestCB(tokens, balanceChanges, data);
+            cbData = IRFTPayer(payer).tokenRequestCB(tokens, balanceChanges, data);
         }
 
         // If we're done with all CBs, we reset the transact data and verify our new balances.
@@ -240,9 +245,14 @@ library RFTLib {
      * @dev We simply INDICATE payments. The function caller is expect to actually do any payment transfers.
      * TODO: Cheapen gas by not asserting if its a contract first. Just attempt the request with a low level call.
      */
-    function request(address payer, address[] memory tokens, int256[] memory amounts, bytes memory data) internal {
+    function request(
+        address payer,
+        address[] memory tokens,
+        int256[] memory amounts,
+        bytes memory data
+    ) internal returns (bytes memory cbData) {
         ContractLib.assertContract(payer);
-        IRFTPayer(payer).tokenRequestCB(tokens, amounts, data);
+        cbData = IRFTPayer(payer).tokenRequestCB(tokens, amounts, data);
     }
 
     /**
@@ -260,9 +270,9 @@ library RFTLib {
         address[] memory tokens,
         int256[] memory amounts,
         bytes memory data
-    ) internal {
+    ) internal returns (bytes memory cbData) {
         if (isSupported(payer)) {
-            IRFTPayer(payer).tokenRequestCB(tokens, amounts, data);
+            cbData = IRFTPayer(payer).tokenRequestCB(tokens, amounts, data);
         } else {
             for (uint256 i = 0; i < tokens.length; ++i) {
                 if (amounts[i] > 0) {
