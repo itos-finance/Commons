@@ -11,7 +11,7 @@ contract SharesTest is Test {
 
     // addAmount tests
 
-    function testAddAmountAtZeroTotalShares() public {
+    function testAddAmountAtZeroTotalShares() public pure {
         Shares memory shares;
         uint256 sharesAdded = shares.addAmount(100);
         assertEq(sharesAdded, 100);
@@ -19,7 +19,7 @@ contract SharesTest is Test {
         assertEq(shares.totalAmount, 100);
     }
 
-    function testAddAmountRewardingLessThanTotalShares() public {
+    function testAddAmountRewardingLessThanTotalShares() public pure {
         Shares memory shares;
         shares.addAmount(100);
         uint256 sharesAdded = shares.addAmount(20);
@@ -28,7 +28,7 @@ contract SharesTest is Test {
         assertEq(shares.totalAmount, 120);
     }
 
-    function testAddAmountRewardingGreaterThanTotalShares() public {
+    function testAddAmountRewardingGreaterThanTotalShares() public pure {
         Shares memory shares;
         shares.addAmount(100);
         uint256 sharesAdded = shares.addAmount(200);
@@ -45,7 +45,7 @@ contract SharesTest is Test {
         shares.removeAmount(0);
     }
 
-    function testRemoveAmountPartial() public {
+    function testRemoveAmountPartial() public pure {
         Shares memory shares;
         shares.addAmount(100);
         uint256 sharesRemoved = shares.removeAmount(20);
@@ -54,7 +54,7 @@ contract SharesTest is Test {
         assertEq(shares.totalAmount, 80);
     }
 
-    function testRemoveAmountTotal() public {
+    function testRemoveAmountTotal() public pure {
         Shares memory shares;
         shares.addAmount(100);
         uint256 sharesRemoved = shares.removeAmount(100);
@@ -71,7 +71,7 @@ contract SharesTest is Test {
         shares.removeShares(0);
     }
 
-    function testRemoveSharesPartial() public {
+    function testRemoveSharesPartial() public pure {
         Shares memory shares;
         shares.addAmount(100);
         uint256 amountRemoved = shares.removeShares(20);
@@ -80,7 +80,7 @@ contract SharesTest is Test {
         assertEq(shares.totalAmount, 80);
     }
 
-    function testRemoveSharesTotal() public {
+    function testRemoveSharesTotal() public pure {
         Shares memory shares;
         shares.addAmount(100);
         uint256 amountRemoved = shares.removeShares(100);
