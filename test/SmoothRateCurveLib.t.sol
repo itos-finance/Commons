@@ -68,7 +68,7 @@ contract SmoothRateCurveLibTest is Test {
 
     // Initialization Tests
 
-    function testInitializeConfigPositiveBeta() public {
+    function testInitializeConfigPositiveBeta() public pure {
         SmoothRateCurveConfig memory memoryConfig;
         memoryConfig.initializeConfig(1, 2, 3, 3);
 
@@ -78,7 +78,7 @@ contract SmoothRateCurveLibTest is Test {
         assertEq(memoryConfig.maxRateX64, 3);
     }
 
-    function testInitializeConfigNegativeBeta() public {
+    function testInitializeConfigNegativeBeta() public pure {
         SmoothRateCurveConfig memory memoryConfig;
         memoryConfig.initializeConfig(100, -2, 3, 4);
 
@@ -119,7 +119,7 @@ contract SmoothRateCurveLibTest is Test {
         memoryConfig.initializeConfig(1, 0, 1, 4);
     }
 
-    // Validate Tests 
+    // Validate Tests
 
     function testRevertValidateIfInvAlphaIsZero() public {
         SmoothRateCurveConfig memory config = mmConfigSPR;
@@ -158,165 +158,165 @@ contract SmoothRateCurveLibTest is Test {
 
     // Money Market Tests (SPR)
 
-    function testMMSPRAtZeroPercentUtilization() public {
+    function testMMSPRAtZeroPercentUtilization() public view {
         uint128 rateX64 = mmConfigSPR.calculateRateX64(ZERO_PERCENT_X64);
         // translates to an APR of 0.0049999999986744675 instead of 0.005000000000000001
         assertEq(rateX64, 2924712086);
     }
 
-    function testMMSPRAtTwentyPercentUtilization() public {
+    function testMMSPRAtTwentyPercentUtilization() public view {
         uint128 rateX64 = mmConfigSPR.calculateRateX64(TWENTY_PERCENT_X64);
         // translates to an APR of 0.012187499999119673 instead of 0.0121875
         assertEq(rateX64, 7128985711);
     }
 
-    function testMMSPRAtFiftyPercentUtilization() public {
+    function testMMSPRAtFiftyPercentUtilization() public view {
         uint128 rateX64 = mmConfigSPR.calculateRateX64(FIFTY_PERCENT_X64);
         // translates to an APR of 0.03374999999874572 instead of 0.03374999999999999
         assertEq(rateX64, 19741806585);
     }
 
     // target util is at 80% for this config
-    function testMMSPRAtTargetUtilization() public {
+    function testMMSPRAtTargetUtilization() public view {
         uint128 rateX64 = mmConfigSPR.calculateRateX64(EIGHTY_PERCENT_X64);
         // translates to an APR of 0.11999999999895948 instead of 0.12
         assertEq(rateX64, 70193090082);
     }
 
-    function testMMSPRAtMaxUtilization() public {
+    function testMMSPRAtMaxUtilization() public view {
         uint128 rateX64 = mmConfigSPR.calculateRateX64(ONE_HUNDRED_PERCENT_X64);
         assertEq(rateX64, 53229759979311); // hits max fee rate
     }
 
-    function testMMSPROverMaxUtilization() public {
+    function testMMSPROverMaxUtilization() public view {
         uint128 rateX64 = mmConfigSPR.calculateRateX64(TWO_HUNDRED_PERCENT_X64);
         assertEq(rateX64, 53229759979311); // hits max fee rate
     }
 
     // Swap Fee Tests
 
-    function testSwapSPRAtZeroPercentUtilization() public {
+    function testSwapSPRAtZeroPercentUtilization() public view {
         uint128 rateX64 = swapFeeSPRConfig.calculateRateX64(0);
         // translates to an APR of 0.00029999999964693685 instead of 0.0002999999999999998
         assertEq(rateX64, 175482725);
     }
 
-    function testSwapSPRAtTwentyPercentUtilization() public {
+    function testSwapSPRAtTwentyPercentUtilization() public view {
         uint128 rateX64 = swapFeeSPRConfig.calculateRateX64(TWENTY_PERCENT_X64);
         // translates to an APR of 0.0009750000001347223 instead of 0.0009749999999999996
         assertEq(rateX64, 570318857);
     }
 
     // target util is at 50% for this config
-    function testSwapSPRAtTargetUtilization() public {
+    function testSwapSPRAtTargetUtilization() public view {
         uint128 rateX64 = swapFeeSPRConfig.calculateRateX64(FIFTY_PERCENT_X64);
         // translates to an APR of 0.0029999999998885085 instead of 0.003
         assertEq(rateX64, 1754827252);
     }
 
-    function testSwapSPRAtEightyPercentUtilization() public {
+    function testSwapSPRAtEightyPercentUtilization() public view {
         uint128 rateX64 = swapFeeSPRConfig.calculateRateX64(EIGHTY_PERCENT_X64);
         // translates to an APR of 0.011100000000613224 instead of 0.011100000000000002
         assertEq(rateX64, 6492860833);
     }
 
-    function testSwapSPRAtMaxUtilization() public {
+    function testSwapSPRAtMaxUtilization() public view {
         uint128 rateX64 = swapFeeSPRConfig.calculateRateX64(ONE_HUNDRED_PERCENT_X64);
         assertEq(rateX64, 58494241735); // hits max fee rate
     }
 
-    function testSwapSPROverMaxUtilization() public {
+    function testSwapSPROverMaxUtilization() public view {
         uint128 rateX64 = swapFeeSPRConfig.calculateRateX64(TWO_HUNDRED_PERCENT_X64);
         assertEq(rateX64, 58494241735); // hits max fee rate
     }
 
     // Borrow Power Tests
 
-    function testBorrowPowerAtZeroPercentUtilization() public {
+    function testBorrowPowerAtZeroPercentUtilization() public view {
         uint128 rateX64 = borrowPowerConfig.calculateRateX64(0);
         // 1511 below expected (1 << 64)
         assertEq(rateX64, 18446744073709553127);
     }
 
-    function testBorrowPowerAtTwentyPercentUtilization() public {
+    function testBorrowPowerAtTwentyPercentUtilization() public view {
         uint128 rateX64 = borrowPowerConfig.calculateRateX64(TWENTY_PERCENT_X64);
         // 1.142857142857143 instead of 1.1428571428571428
         assertEq(rateX64, 21081993227096632173);
     }
 
-    function testBorrowPowerAtFiftyPercentUtilization() public {
+    function testBorrowPowerAtFiftyPercentUtilization() public view {
         uint128 rateX64 = borrowPowerConfig.calculateRateX64(FIFTY_PERCENT_X64);
         // exactly 1.5102040816326532
         assertEq(rateX64, 27858348192949120701);
     }
 
     // target util is at 70% for this config
-    function testBorrowPowerSPRAtTargetUtilization() public {
+    function testBorrowPowerSPRAtTargetUtilization() public view {
         uint128 rateX64 = borrowPowerConfig.calculateRateX64(SEVENTY_PERCENT_X64);
         assertEq(rateX64, (2 << 64));
     }
 
-    function testBorrowPowerAtEightyPercentUtilization() public {
+    function testBorrowPowerAtEightyPercentUtilization() public view {
         uint128 rateX64 = borrowPowerConfig.calculateRateX64(EIGHTY_PERCENT_X64);
         // exactly 2.428571428571429
         assertEq(rateX64, 44799235607580347977);
     }
 
-    function testBorrowPowerAtOneHundredPercentUtilization() public {
+    function testBorrowPowerAtOneHundredPercentUtilization() public view {
         uint128 rateX64 = borrowPowerConfig.calculateRateX64(ONE_HUNDRED_PERCENT_X64);
         // exactly 4.571428571428572
         assertEq(rateX64, 84327972908386536594);
     }
 
-    function testBorrowPowerAtMaxUtilization() public {
+    function testBorrowPowerAtMaxUtilization() public view {
         uint128 rateX64 = borrowPowerConfig.calculateRateX64(ONE_HUNDRED_TWENTY_PERCENT_X64);
         assertEq(rateX64, (5 << 64)); // hits max
     }
 
-    function testBorrowPowerOverMaxUtilization() public {
+    function testBorrowPowerOverMaxUtilization() public view {
         uint128 rateX64 = borrowPowerConfig.calculateRateX64(TWO_HUNDRED_PERCENT_X64);
         assertEq(rateX64, (5 << 64)); // hits max
     }
 
     // Internal Borrower Tests
 
-    function testInternalBorrowerSPRAtZeroPercentUtilization() public {
+    function testInternalBorrowerSPRAtZeroPercentUtilization() public view {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(0);
         // translates to an APR of 0.0050000000003840375 instead of 0.005
         assertEq(rateX64, 2924712087);
     }
 
-    function testInternalBorrowerSPRAtTwentyPercentUtilization() public {
+    function testInternalBorrowerSPRAtTwentyPercentUtilization() public view {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(TWENTY_PERCENT_X64);
         // translates to an APR of 0.04840000000002481 instead of 0.04839999999999998
         assertEq(rateX64, 28311213000);
     }
 
     // target util is at 50% for this config
-    function testInternalBorrowerSPRAtTargetUtilization() public {
+    function testInternalBorrowerSPRAtTargetUtilization() public view {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(FIFTY_PERCENT_X64);
         // translates to an APR of 0.16000000000032222 instead of 0.16
         assertEq(rateX64, 93590786777);
     }
 
-    function testInternalBorrowerSPRAtEightyPercentUtilization() public {
+    function testInternalBorrowerSPRAtEightyPercentUtilization() public view {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(EIGHTY_PERCENT_X64);
         // translates to an APR of 0.43900000000021094 instead of 0.43900000000000006
         assertEq(rateX64, 256789721219);
     }
 
-    function testInternalBorrowerSPRAtOneHundredPercentUtilization() public {
+    function testInternalBorrowerSPRAtOneHundredPercentUtilization() public view {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(ONE_HUNDRED_PERCENT_X64);
         // translates to an APR of 1.0899999999999512 instead of 1.09
         assertEq(rateX64, 637587234917);
     }
 
-    function testInternalBorrowerSPRAtMaxUtilization() public {
+    function testInternalBorrowerSPRAtMaxUtilization() public view {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(ONE_HUNDRED_TWENTY_PERCENT_X64);
         assertEq(rateX64, 8774136260326); // hits max fee rate
     }
 
-    function testInternalBorrowerSPROverMaxUtilization() public {
+    function testInternalBorrowerSPROverMaxUtilization() public view {
         uint128 rateX64 = internalBorrowerSPRConfig.calculateRateX64(TWO_HUNDRED_PERCENT_X64);
         assertEq(rateX64, 8774136260326); // hits max fee rate
     }
