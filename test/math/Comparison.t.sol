@@ -14,7 +14,7 @@ import {
 contract ComparisonLibTest is Test {
     // int24
 
-    function testMinInt24() public {
+    function testMinInt24() public pure {
         int24 a = 1;
         int24 b = 2;
 
@@ -22,7 +22,7 @@ contract ComparisonLibTest is Test {
         assertEq(a, Int24ComparisonLib.min(b, a));
     }
 
-    function testMaxInt24() public {
+    function testMaxInt24() public pure {
         int24 a = 1;
         int24 b = 2;
 
@@ -32,7 +32,7 @@ contract ComparisonLibTest is Test {
 
     // int256
 
-    function testMinInt256() public {
+    function testMinInt256() public pure {
         int256 a = 1;
         int256 b = 2;
 
@@ -40,7 +40,7 @@ contract ComparisonLibTest is Test {
         assertEq(a, Int256ComparisonLib.min(b, a));
     }
 
-    function testMaxInt256() public {
+    function testMaxInt256() public pure {
         int256 a = 1;
         int256 b = 2;
 
@@ -50,7 +50,7 @@ contract ComparisonLibTest is Test {
 
     // uint24
 
-    function testMinUint24() public {
+    function testMinUint24() public pure {
         uint24 a = 1;
         uint24 b = 2;
 
@@ -58,7 +58,7 @@ contract ComparisonLibTest is Test {
         assertEq(a, Uint24ComparisonLib.min(b, a));
     }
 
-    function testMaxUint24() public {
+    function testMaxUint24() public pure {
         uint24 a = 1;
         uint24 b = 2;
 
@@ -68,7 +68,7 @@ contract ComparisonLibTest is Test {
 
     // uint256
 
-    function testMinUint256() public {
+    function testMinUint256() public pure {
         uint256 a = 1;
         uint256 b = 2;
 
@@ -76,7 +76,7 @@ contract ComparisonLibTest is Test {
         assertEq(a, Uint256ComparisonLib.min(b, a));
     }
 
-    function testMaxUint256() public {
+    function testMaxUint256() public pure {
         uint256 a = 1;
         uint256 b = 2;
 
