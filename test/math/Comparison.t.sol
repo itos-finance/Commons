@@ -9,7 +9,7 @@ import {
     Int256ComparisonLib,
     Uint24ComparisonLib,
     Uint256ComparisonLib
-} from "../../../src/Math/Comparison.sol";
+} from "../../src/Math/Comparison.sol";
 
 contract ComparisonLibTest is Test {
     // int24
