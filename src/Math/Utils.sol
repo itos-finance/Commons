@@ -107,26 +107,19 @@ library MathUtils {
         }
     }
 
-    /// Compute the multiplicative inverse of a uint256.
-    /// @dev Sourced from https://xn--2-umb.com/18/multiplitcative-inverses/
-    function inv256(uint256 a)
-        public pure
-        returns (uint256 r)
-    {
-        // 4 bit lookup table
-        bytes16 table = 0x001000b000d0007000900030005000f;
+    /// Get an X256 number representing the ratio of a/b where a < b.
+    /// This rounds down. Generally, you'll want to multiply this ratio with another value through X256.mul256.
+    /// @dev b must be greater than 1.
+    /// @dev TODO: untested
+    /// @custom:gas 94
+    function percentX256(uint256 a, uint256 b) internal pure returns (uint256 ratioX256) {
+        /// We actually compute 2^256 / b first extremely cheaply. ~20 gas
+        require(b > 1, "0");
         assembly {
-            r := bytes(and(15, a), table);
+            ratioX256 := add(div(sub(0, b), b), 1)
+            ratioX256 := mul(a, ratioX256)
         }
-
-        // 6 iterations of Newton-Raphson for 4 ⋅ 2^6 = 256 bit.
-        r *= 2 - a * r;
-        r *= 2 - a * r;
-        r *= 2 - a * r;
-        r *= 2 - a * r;
-        r *= 2 - a * r;
-        r *= 2 - a * r;
-        return r;
+        // The multiplication always fits since a < b
     }
 
     /// Calculate the most significant bit's place, 0th indexed.

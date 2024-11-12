@@ -209,23 +209,29 @@ library X128 {
     }
 
     /// Attempt to divide a by b to get an X128 result. If the result is too large 0 and true is returned.
+    /// @dev TODO: untested
+    /// @dev This rounds down.
     function tryDivTo(uint256 a, uint256 b) internal pure returns (uint256 resX128, bool overFlow) {
         uint256 whole = a / b; // Whole result
+        // Can't fit in Q128X128
         if (whole >= SHIFT) return (0, true);
         uint256 residual;
         unchecked {
+            // Q128 part
             resX128 = whole << 128;
-            residual = a - whole * b;
+            // X128 part
+            residual = a % b;
         }
+        // If the residual is small we can go ahead with regular division.
         if (residual < SHIFT) {
             // The common case
             unchecked {
-                resX128 = (residual << 128) / b;
+                resX128 += (residual << 128) / b;
             }
             return (resX128, false);
         }
-
-        uint8 rMSB = MathUtils.msb(residual); // Could save 9 gas by making a tailor one for just the relevant 128 bits.
+        // If the residual is too large, we try to shift up by as much as we can while still fitting into 256 bit arithmetic.
+        uint8 rMSB = MathUtils.msb(residual); // Could save 9 gas by making a tailored one for just the relevant 128 bits.
         /// Residual greather or equal to SHIFT means rMSB >= 128.
         uint8 shiftUp;
         uint8 shiftDown;
@@ -234,9 +240,27 @@ library X128 {
             shiftDown = 128 - shiftUp;
         }
         // These two shifts combine to add the X128 bits.
-        resX128 += (residual << shiftUp) / (b >> shiftDown);
+        // TODO: Handle rounding up
+        uint256 denom = b >> shiftDown;
+        if (b % (1 << shiftDown) > 0) {
+            denom += 1;
+        }
+        resX128 += (residual << shiftUp) / denom;
     }
 }
+
+library X256 {
+    /// Multiply a 256 bit number by a 256 bit number and div by 2^256.
+    /// @custom:gas 212
+    function mul256(uint256 a, uint256 b, bool roundUp) internal pure returns (uint256) {
+        (uint256 bot, uint256 top) = FullMath.mul512(a, b);
+        assembly {
+            top := add(top, and(roundUp, gt(bot, 0)))
+        }
+        return top;
+    }
+}
+
 
 /// Convenience library for interacting with Uint128s by other types.
 library U128Ops {
