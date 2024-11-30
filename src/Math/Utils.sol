@@ -111,8 +111,9 @@ library MathUtils {
     /// This rounds down. Generally, you'll want to multiply this ratio with another value through X256.mul256.
     /// @dev b must be greater than 1.
     /// @dev TODO: untested
-    /// @custom:gas 94
+    /// @custom:gas 104
     function percentX256(uint256 a, uint256 b) internal pure returns (uint256 ratioX256) {
+        if (a == b) return uint256(int256(-1));
         /// We actually compute 2^256 / b first extremely cheaply. ~20 gas
         require(b > 1, "0");
         assembly {
