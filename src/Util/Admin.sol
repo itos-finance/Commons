@@ -28,6 +28,9 @@ struct AdminRegistry {
     // Of course it can assign rights to itself.
     // Thus it is probably desireable to qualify this ability, for example by time-gating it.
     address owner;
+    // The owner can reassign ownership to a new address. This new address here must accept ownership
+    // before it is actually transferred to avoid incorrect reassignemnts.
+    address pendingOwner;
     // Rights are one hot encodings of permissions granted to users.
     // Each right should be a single bit in the uint256.
     mapping(address => uint256) rights;
@@ -42,6 +45,7 @@ library AdminLib {
     error NotOwner();
     error InsufficientCredentials(address caller, uint256 expectedRights, uint256 actualRights);
     error CannotReinitializeOwner(address existingOwner);
+    error ImproperOwnershipAcceptance();
 
     event AdminAdded(address admin, uint256 newRight, uint256 existing);
     event AdminRemoved(address admin, uint256 removedRight, uint256 existing);
@@ -101,11 +105,23 @@ library AdminLib {
         adReg.owner = owner;
     }
 
-    /// Move ownership to another address
+    /// @notice Move ownership to another addres. The new owner is not immediately assigned
+    /// and must confirm validity by accepting the ownership.
     /// @dev Remember to initialize the owner to a contract that can reassign on construction.
     function reassignOwner(address newOwner) internal {
         validateOwner();
-        adminStore().owner = newOwner;
+        adminStore().pendingOwner = newOwner;
+    }
+
+    /// Once ownership has been reassigned to a new address, the new address must make a call to
+    /// explicitly acceptance ownership. This avoids problems that can arise from incorrect reassignments.
+    function acceptOwnership() internal {
+        AdminRegistry storage adReg = adminStore();
+        if (adReg.pendingOwner != msg.sender) {
+            revert ImproperOwnershipAcceptance();
+        }
+        adReg.owner = msg.sender;
+        adReg.pendingOwner = address(0);
     }
 
     /// Add a right to an address
@@ -129,12 +145,23 @@ library AdminLib {
 
 /// Base class for an admin facet with external interactions with the AdminLib
 contract BaseAdminFacet is IERC173 {
+    constructor() {
+        // ERC173 complies with 165.
+        Auto165Lib.addSupport(type(IERC173).interfaceId);
+    }
+
     function transferOwnership(address _newOwner) external override {
         AdminLib.reassignOwner(_newOwner);
     }
 
     function owner() external view override returns (address owner_) {
         owner_ = AdminLib.getOwner();
+    }
+
+    /// The pending owner can accept their ownership rights.
+    function acceptOwnership() external {
+        emit IERC173.OwnershipTransferred(AdminLib.getOwner(), msg.sender);
+        AdminLib.acceptOwnership();
     }
 
     /// Fetch the admin level for an address.

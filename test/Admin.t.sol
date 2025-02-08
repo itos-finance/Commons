@@ -53,6 +53,13 @@ contract AdminTest is PRBTest, StdCheats {
         // But we can reassign
         AdminLib.reassignOwner(address(this));
 
+        // Verify we're still the owner because no one has accepted it yet.
+        AdminLib.validateOwner();
+
+        // But once this contract accepts the reassignment.
+        vm.prank(address(this));
+        AdminLib.acceptOwnership();
+
         // Verify we're not the owner anymore
         vm.expectRevert(AdminLib.InsufficientCredentials.selector);
         AdminLib.validateOwner();
