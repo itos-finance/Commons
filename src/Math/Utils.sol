@@ -1,7 +1,16 @@
-// SPDX-License-Identifier: BSL-1.1
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 library MathUtils {
+    /// Constants for masking in calculating MSB.
+    uint256 public constant SHIFT128 = ((1 << 128) - 1) << 128;
+    uint256 public constant SHIFT64 = ((1 << 64) - 1) << 64;
+    uint256 public constant SHIFT32 = ((1 << 32) - 1) << 32;
+    uint256 public constant SHIFT16 = ((1 << 16) - 1) << 16;
+    uint256 public constant SHIFT8 = ((1 << 8) - 1) << 8;
+    uint256 public constant SHIFT4 = ((1 << 4) - 1) << 4;
+    uint256 public constant SHIFT2 = ((1 << 2) - 1) << 2;
+    uint256 public constant SHIFT1 = 0x2;
 
     function abs(int256 self) internal pure returns (int256) {
         return self >= 0 ? self : -self;
@@ -95,6 +104,69 @@ library MathUtils {
             if (result >= roundedResult) {
                 result = roundedResult;
             }
+        }
+    }
+
+    /// Get an X256 number representing the ratio of a/b where a < b.
+    /// This rounds down. Generally, you'll want to multiply this ratio with another value through X256.mul256.
+    /// @dev b must be greater than 1.
+    /// @dev BE AWARE OF WHEN THIS IS INACCURATE. THERE ARE VERY RARE INSTANCES WHERE THIS IS APPROPRIATE.
+    /// The inaccuracy is significant.
+    /// @custom:gas 104
+    function percentX256(uint256 a, uint256 b) internal pure returns (uint256 ratioX256) {
+        if (a == b) return uint256(int256(-1));
+        /// We actually compute 2^256 / b first extremely cheaply. ~20 gas
+        require(b > 1, "0");
+        assembly {
+            ratioX256 := add(div(sub(0, b), b), 1)
+            ratioX256 := mul(a, ratioX256)
+        }
+        // The multiplication always fits since a < b
+    }
+
+    /// Calculate the most significant bit's place, 0th indexed.
+    /// @dev Also returns 0 if the input is 0.
+    function msb(uint256 x) internal pure returns (uint8 place) {
+        if (x == 0) return 0;
+
+        if ((x & SHIFT128) != 0) {
+            place += 128;
+            x >>= 128;
+        }
+
+        if ((x & SHIFT64) != 0) {
+            place += 64;
+            x >>= 64;
+        }
+
+        if ((x & SHIFT32) != 0) {
+            place += 32;
+            x >>= 32;
+        }
+
+        if ((x & SHIFT16) != 0) {
+            place += 16;
+            x >>= 16;
+        }
+
+        if ((x & SHIFT8) != 0) {
+            place += 8;
+            x >>= 8;
+        }
+
+        if ((x & SHIFT4) != 0) {
+            place += 4;
+            x >>= 4;
+        }
+
+        if ((x & SHIFT2) != 0) {
+            place += 2;
+            x >>= 2;
+        }
+
+        if ((x & SHIFT1) != 0) {
+            place += 1;
+            x >>= 1;
         }
     }
 }

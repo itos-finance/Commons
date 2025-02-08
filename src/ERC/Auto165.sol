@@ -2,11 +2,11 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import {IERC165} from "@Commons/ERC/interfaces/IERC165.sol";
+import {IERC165} from "./interfaces/IERC165.sol";
 
 // A contract can comply with ERC165 by simply inheriting this contract.
 // Any other contracts it inherits from can indicate the supported interfaces
-// simply by calling Auto165Lib.addSupport in their constructor and it'll automatically
+// by calling Auto165Lib.addSupport in their constructor and it'll automatically
 // be incorporated into the supportsInterface call.
 contract Auto165 is IERC165 {
     // The following is just an example.
@@ -19,7 +19,7 @@ contract Auto165 is IERC165 {
     // }
 
     /// @inheritdoc IERC165
-    function supportsInterface(bytes4 interfaceId) external view returns (bool) {
+    function supportsInterface(bytes4 interfaceId) external view virtual returns (bool) {
         return Auto165Lib.contains(interfaceId);
     }
 }
@@ -41,7 +41,7 @@ library Auto165Lib {
     }
 
     /// Determine if the diamond storage of interfaces contains the given id.
-    function contains(bytes4 interfaceId) internal view returns(bool) {
+    function contains(bytes4 interfaceId) internal view returns (bool) {
         mapping(bytes4 => bool) storage interfaces = interfaceStore();
         return interfaces[interfaceId];
     }

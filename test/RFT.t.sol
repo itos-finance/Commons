@@ -6,17 +6,17 @@ import { console2 } from "forge-std/console2.sol";
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdCheats } from "forge-std/StdCheats.sol";
 
-import { RFTLib, RFTPayer, IRFTPayer, IERC165} from "@Commons/Util/RFT.sol";
-import { MintableERC20 } from "@Commons/ERC/ERC20.u.sol";
-import { ContractLib } from "@Commons/Util/Contract.sol";
-import { Auto165 } from "@Commons/ERC/Auto165.sol";
+import { RFTLib, RFTPayer, IRFTPayer, IERC165 } from "src/Util/RFT.sol";
+import { MintableERC20 } from "src/ERC/ERC20.u.sol";
+import { ContractLib } from "src/Util/Contract.sol";
+import { Auto165 } from "src/ERC/Auto165.sol";
 
 contract MockRFTPayer is RFTPayer, Auto165 {
     function tokenRequestCB(
         address[] calldata tokens,
         int256[] calldata requests,
         bytes calldata
-    ) external {
+    ) external returns (bytes memory cbData) {
         for (uint256 i = 0; i < tokens.length; ++i) {
             if (requests[i] > 0) {
                 MintableERC20(tokens[i]).mint(msg.sender, uint256(requests[i]));
@@ -25,12 +25,33 @@ contract MockRFTPayer is RFTPayer, Auto165 {
     }
 }
 
+contract MockRFTDataPayer is RFTPayer, Auto165 {
+    bytes _cbData;
+    constructor(bytes memory data) {
+        _cbData = data;
+    }
+
+    function tokenRequestCB(
+        address[] calldata tokens,
+        int256[] calldata requests,
+        bytes calldata
+    ) external returns (bytes memory) {
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            if (requests[i] > 0) {
+                MintableERC20(tokens[i]).mint(msg.sender, uint256(requests[i]));
+            }
+        }
+
+        return _cbData;
+    }
+}
+
 contract RFTNonPayer is RFTPayer, Auto165 {
     function tokenRequestCB(
         address[] calldata tokens,
         int256[] calldata requests,
         bytes calldata
-    ) external {}
+    ) external returns (bytes memory cbData) {}
 }
 
 contract RFTMultiplePayer is RFTPayer, Auto165 {
@@ -44,13 +65,14 @@ contract RFTMultiplePayer is RFTPayer, Auto165 {
         address[] calldata tokens,
         int256[] calldata,
         bytes calldata data
-    ) external {
+    ) external returns (bytes memory cbData) {
         (uint256 pay, int256 nextRequest, bytes memory nextData) = abi.decode(data, (uint256, int256, bytes));
         if (pay > 0) {
             MintableERC20(tokens[0]).mint(msg.sender, pay);
         }
-        if (nextRequest != 0)
+        if (nextRequest != 0) {
             helper.reentrantSettle(address(this), nextRequest, nextData);
+        }
     }
 }
 
@@ -65,7 +87,7 @@ contract RFTSettlePayer is RFTPayer, Auto165 {
         address[] calldata,
         int256[] calldata request,
         bytes calldata data
-    ) external {
+    ) external returns (bytes memory cbData) {
         bool reentrant = abi.decode(data, (bool));
         if (reentrant) {
             helper.reentrantSettle(address(this), request[0], abi.encode(false));
@@ -75,56 +97,60 @@ contract RFTSettlePayer is RFTPayer, Auto165 {
     }
 }
 
-
 /// @dev We need this contract to run the revert calls due to a Foundry bug
 /// where if the testing contract reverts the test prematurely stops.
 contract RFTTestHelper {
     address public token;
+
     constructor(address _token) {
         token = _token;
     }
 
-    function request(address payer, int256 amount) external {
+    function request(address payer, int256 amount) external returns (bytes memory data) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
         bytes memory nulldata;
-        RFTLib.request(payer, tokens, amounts, nulldata);
+        return RFTLib.request(payer, tokens, amounts, nulldata);
     }
 
-    function requestOrTransfer(address payer, int256 amount) external {
+    function requestOrTransfer(address payer, int256 amount) external returns (bytes memory data) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
         bytes memory nulldata;
-        RFTLib.requestOrTransfer(payer, tokens, amounts, nulldata);
+        return RFTLib.requestOrTransfer(payer, tokens, amounts, nulldata);
     }
 
-    function settle(address payer, int256 amount) external {
+    function settle(address payer, int256 amount) external returns (int256[] memory actualDeltas, bytes memory data) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
         bytes memory nulldata;
-        RFTLib.settle(payer, tokens, amounts, nulldata);
+        return RFTLib.settle(payer, tokens, amounts, nulldata);
     }
 
-    function settle(address payer, int256 amount, bytes calldata data) external {
+    function settle(
+        address payer,
+        int256 amount,
+        bytes calldata data
+    ) external returns (int256[] memory actualDeltas, bytes memory cbData) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
-        RFTLib.settle(payer, tokens, amounts, data);
+        return RFTLib.settle(payer, tokens, amounts, data);
     }
 
-    function reentrantSettle(address payer, int256 amount, bytes memory insts) external {
+    function reentrantSettle(address payer, int256 amount, bytes memory insts) external returns (bytes memory data) {
         address[] memory tokens = new address[](1);
         tokens[0] = token;
         int256[] memory amounts = new int256[](1);
         amounts[0] = amount;
-        RFTLib.reentrantSettle(payer, tokens, amounts, insts);
+        return RFTLib.reentrantSettle(payer, tokens, amounts, insts);
     }
 }
 
@@ -136,6 +162,7 @@ contract RFTTest is PRBTest, StdCheats {
     RFTTestHelper public helper;
     address public multiplePayer;
     address public settlePayer;
+    address public dataPayer;
 
     function setUp() public {
         token = new MintableERC20("eth", "ETH");
@@ -145,6 +172,7 @@ contract RFTTest is PRBTest, StdCheats {
         helper = new RFTTestHelper(address(token));
         multiplePayer = address(new RFTMultiplePayer(address(helper)));
         settlePayer = address(new RFTSettlePayer(address(helper)));
+        dataPayer = address(new MockRFTDataPayer(abi.encode(uint256(7))));
     }
 
     function testRequests() public {
@@ -173,7 +201,11 @@ contract RFTTest is PRBTest, StdCheats {
 
         // Request or fail
         assertFalse(RFTLib.isSupported(human));
+        // Non payer doesn't pay but still supports interface.
+        assertTrue(RFTLib.isSupported(nonPayer));
         assertTrue(RFTLib.isSupported(payer));
+        // This contract doesnt have ERC165, but doesn't error when checking support.
+        assertFalse(RFTLib.isSupported(address(this)));
     }
 
     function testSettle() public {
@@ -191,9 +223,7 @@ contract RFTTest is PRBTest, StdCheats {
         helper.settle(payer, 1 gwei);
 
         helper.settle(nonPayer, -1 gwei);
-        vm.expectRevert(abi.encodeWithSelector(
-            RFTLib.InsufficientReceive.selector, address(token), 1 gwei, 0
-        ));
+        vm.expectRevert(abi.encodeWithSelector(RFTLib.InsufficientReceive.selector, address(token), 1 gwei, 0));
         helper.settle(nonPayer, 1 gwei);
 
         // Test reentrancy
@@ -221,9 +251,7 @@ contract RFTTest is PRBTest, StdCheats {
 
         first = abi.encode(uint256(1 gwei), int256(0), nulldata);
         second = abi.encode(uint256(0), int256(1 gwei), first);
-        vm.expectRevert(abi.encodeWithSelector(
-            RFTLib.InsufficientReceive.selector, address(token), 2 gwei, 1 gwei
-        ));
+        vm.expectRevert(abi.encodeWithSelector(RFTLib.InsufficientReceive.selector, address(token), 2 gwei, 1 gwei));
         helper.reentrantSettle(multiplePayer, 1 gwei, second);
 
         // Test multiple sends.
@@ -244,9 +272,7 @@ contract RFTTest is PRBTest, StdCheats {
         // undersend
         first = abi.encode(uint256(1 gwei), int256(0), nulldata);
         second = abi.encode(uint256(0), -1 gwei, first);
-        vm.expectRevert(abi.encodeWithSelector(
-            RFTLib.InsufficientReceive.selector, address(token), 1 gwei, 0
-        ));
+        vm.expectRevert(abi.encodeWithSelector(RFTLib.InsufficientReceive.selector, address(token), 1 gwei, 0));
         helper.reentrantSettle(multiplePayer, 2 gwei, second);
 
         // Receive and send back.
@@ -262,9 +288,7 @@ contract RFTTest is PRBTest, StdCheats {
 
         first = abi.encode(uint256(0), int256(0), nulldata);
         second = abi.encode(uint256(0), int256(1 gwei), first);
-        vm.expectRevert(abi.encodeWithSelector(
-            RFTLib.InsufficientReceive.selector, address(token), 0, -1 gwei
-        ));
+        vm.expectRevert(abi.encodeWithSelector(RFTLib.InsufficientReceive.selector, address(token), 0, -1 gwei));
         helper.reentrantSettle(multiplePayer, -1 gwei, second);
 
         // Test reentrancy with settle.
@@ -286,5 +310,24 @@ contract RFTTest is PRBTest, StdCheats {
         helper.reentrantSettle(human, 1 ether, first);
         helper.reentrantSettle(human, -1 ether, first);
         helper.reentrantSettle(human, 1 ether, first);
+    }
+
+    function testHandleTokenRequestCBData() public {
+        (, bytes memory data) = helper.settle(dataPayer, 1 gwei);
+        uint256 result = abi.decode(data, (uint256));
+        assertEq(result, uint256(7));
+
+        data = helper.request(dataPayer, 1 gwei);
+        result = abi.decode(data, (uint256));
+        assertEq(result, uint256(7));
+
+        data = helper.requestOrTransfer(dataPayer, 1 gwei);
+        result = abi.decode(data, (uint256));
+        assertEq(result, uint256(7));
+
+        bytes memory nulldata;
+        data = helper.reentrantSettle(dataPayer, 1 gwei, nulldata);
+        result = abi.decode(data, (uint256));
+        assertEq(result, uint256(7));
     }
 }

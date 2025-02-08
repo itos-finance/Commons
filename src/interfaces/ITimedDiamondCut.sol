@@ -1,17 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-/******************************************************************************\
-* Author: Terence An <terence@itos.fi>
-* Builds upon EIP-2535 Diamonds: https://eips.ethereum.org/EIPS/eip-253
-* by Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
-/******************************************************************************/
-import { IDiamond } from "Diamond/interfaces/IDiamond.sol";
+/**
+ * \
+ * Author: Terence An <terence@itos.fi>
+ * Builds upon EIP-2535 Diamonds: https://eips.ethereum.org/EIPS/eip-253
+ * by Nick Mudge <nick@perfectabstractions.com> (https://twitter.com/mudgen)
+ * /*****************************************************************************
+ */
+import {IDiamond} from "../Diamond/interfaces/IDiamond.sol";
 
 interface ITimedDiamondCut is IDiamond {
     /// A new timed diamond cut has been initiated with these parameters and will take
     /// effect when confirmed after this emitted start time.
-    event TimedDiamondCut(uint64 indexed startTime, uint256 assignmentId, FacetCut _diamondCut, address _init, bytes _calldata);
+    event TimedDiamondCut(
+        uint64 indexed startTime, uint256 assignmentId, FacetCut _diamondCut, address _init, bytes _calldata
+    );
 
     /// Attempted to confirm a cut too early.
     error PrematureCutConfirmation(uint64 confirmTime);
@@ -25,11 +29,9 @@ interface ITimedDiamondCut is IDiamond {
     /// @param _calldata The calldata called on the init function by delegate call.
     /// @return assignmentId The identifier to call with to confirm the cut once
     /// enough delay has passed.
-    function timedDiamondCut(
-        FacetCut calldata _cut,
-        address _init,
-        bytes calldata _calldata
-    ) external returns (uint256 assignmentId);
+    function timedDiamondCut(FacetCut calldata _cut, address _init, bytes calldata _calldata)
+        external
+        returns (uint256 assignmentId);
 
     /// @notice Accept a previously initiated timed diamond cut now that the delay
     /// has passed.

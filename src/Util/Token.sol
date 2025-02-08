@@ -2,8 +2,8 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import { IERC20Minimal } from "@Commons/ERC/interfaces/IERC20Minimal.sol";
-import { ContractLib } from "./Contract.sol";
+import {IERC20Minimal} from "../ERC/interfaces/IERC20Minimal.sol";
+import {ContractLib} from "./Contract.sol";
 
 type Token is address;
 
@@ -35,6 +35,16 @@ library TokenImpl {
         return abi.decode(data, (uint256));
     }
 
+    /// Query the balance of this token for another address.
+    function balanceOf(Token self, address owner) internal view returns (uint256) {
+        (bool success, bytes memory data) =
+            addr(self).staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, owner));
+        if (!(success && data.length >= 32)) {
+            revert TokenBalanceInvalid();
+        }
+        return abi.decode(data, (uint256));
+    }
+
     /// Transfer this token from caller to recipient.
     function transfer(Token self, address recipient, uint256 amount) internal {
         if (amount == 0) return; // Short circuit
@@ -51,7 +61,7 @@ library TokenImpl {
         if (amount == 0) return;
 
         (bool success, bytes memory data) =
-        addr(self).call(abi.encodeWithSelector(IERC20Minimal.approve.selector, spender, amount));
+            addr(self).call(abi.encodeWithSelector(IERC20Minimal.approve.selector, spender, amount));
         if (!(success && (data.length == 0 || abi.decode(data, (bool))))) {
             revert TokenApproveFailure();
         }
