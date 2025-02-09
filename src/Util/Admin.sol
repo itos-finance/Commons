@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import { IERC173 } from "../ERC/interfaces/IERC173.sol";
+import { Auto165Lib } from "../ERC/Auto165.sol";
 
 /**
  * @title Administrative Library
