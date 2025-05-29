@@ -100,8 +100,13 @@ library RFTLib {
 
         bool isRFTPayer = isSupported(payer);
         for (uint256 i = 0; i < tokens.length; ++i) {
-            address token = tokens[i];
             int256 change = balanceChanges[i];
+            if (change == 0) {
+                // If the change is 0, we don't need to do anything.
+                continue;
+            }
+
+            address token = tokens[i];
             startBalances[i] = IERC20(token).balanceOf(address(this));
 
             if (change < 0) {
@@ -119,13 +124,19 @@ library RFTLib {
 
         actualDeltas = new int256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; ++i) {
+            int256 change = balanceChanges[i];
+            if (change == 0) {
+                // If the change is 0, we can ignore.
+                continue;
+            }
+
             address token = tokens[i];
 
             // Validate our balances.
             uint256 finalBalance = IERC20(token).balanceOf(address(this));
             actualDeltas[i] = U256Ops.sub(finalBalance, startBalances[i]);
-            if (actualDeltas[i] < balanceChanges[i]) {
-                revert InsufficientReceive(token, balanceChanges[i], actualDeltas[i]);
+            if (actualDeltas[i] < change) {
+                revert InsufficientReceive(token, change, actualDeltas[i]);
             }
         }
 
