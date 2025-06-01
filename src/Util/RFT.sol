@@ -44,6 +44,8 @@ library RFTLib {
     error InsufficientReceive(address token, int256 expected, int256 actual);
     /// Reentrancy attempted with non-reentry call.
     error ReentrancyLocked();
+    /// Self-transfers can exploit the reentrant delta tracking.
+    error SelfTransferDisallowed();
 
     enum ReentrancyStatus {
         Idle,
@@ -162,6 +164,7 @@ library RFTLib {
         int256[] memory balanceChanges,
         bytes memory data
     ) internal returns (bytes memory cbData) {
+        require(payer != address(this), SelfTransferDisallowed());
         // We first setup the transaction we'll be handling.
         TotalTransact storage transact = transactionStatus();
         if (transact.status == ReentrancyStatus.Locked) {
