@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright 2023 Itos Inc.
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.26;
 
 import { Auto165Lib, IERC165 } from "../ERC/Auto165.sol";
 import { IERC20 } from "../ERC/interfaces/IERC20.sol";
@@ -37,6 +37,8 @@ abstract contract RFTPayer is IRFTPayer {
 library RFTLib {
     /* Internals */
     bytes32 constant RFT_STORAGE_POSITION = keccak256("itos.rft.20231109.diamond.storage");
+    bytes32 constant RFT_LOCK_SLOT = 0xdc43f4e2b25df7ee63475fa2ace4596c9bf04dace57e8300146ee1d023a3ae8e;
+    // keccak256("itos.rft.lock.20250601.transient");
 
     /// Revert when the tokens and the amount lengths don't match.
     error RFTLengthMismatch();
@@ -54,14 +56,13 @@ library RFTLib {
     }
 
     struct TotalTransact {
-        ReentrancyStatus status;
         address[] tokens;
         mapping(address => int256) delta;
         mapping(address => uint256) startBalance;
     }
 
     /// Diamond storage for RFTLib if its used to settle balance changes
-    function transactionStatus() private pure returns (TotalTransact storage transact) {
+    function transactionStorage() private pure returns (TotalTransact storage transact) {
         bytes32 position = RFT_STORAGE_POSITION;
         assembly {
             transact.slot := position
@@ -87,13 +88,7 @@ library RFTLib {
         int256[] memory balanceChanges,
         bytes memory data
     ) internal returns (int256[] memory actualDeltas, bytes memory cbData) {
-        TotalTransact storage transact = transactionStatus();
-        if (transact.status != ReentrancyStatus.Idle) {
-            revert ReentrancyLocked();
-        }
-
-        transact.status = ReentrancyStatus.Locked;
-
+        lock(ReentrancyStatus.Locked);
         if (tokens.length != balanceChanges.length) {
             revert RFTLengthMismatch();
         }
@@ -141,8 +136,7 @@ library RFTLib {
                 revert InsufficientReceive(token, change, actualDeltas[i]);
             }
         }
-
-        transact.status = ReentrancyStatus.Idle;
+        unlock();
     }
 
     /**
@@ -167,20 +161,24 @@ library RFTLib {
         bytes memory data
     ) internal returns (bytes memory cbData) {
         require(payer != address(this), SelfTransferDisallowed());
-        // We first setup the transaction we'll be handling.
-        TotalTransact storage transact = transactionStatus();
-        if (transact.status == ReentrancyStatus.Locked) {
+
+        // We first handle the reentrancy lock.
+        ReentrancyStatus status = viewLock();
+        if (status == ReentrancyStatus.Locked) {
             revert ReentrancyLocked();
         }
-        bool outerContext = transact.status == ReentrancyStatus.Idle;
+        bool outerContext = status == ReentrancyStatus.Idle;
 
         if (outerContext) {
-            transact.status = ReentrancyStatus.Transacting;
+            lock(ReentrancyStatus.Transacting);
         }
 
         if (tokens.length != balanceChanges.length) {
             revert RFTLengthMismatch();
         }
+
+        // The current ongoing transaction is stored here.
+        TotalTransact storage transact = transactionStorage();
 
         bool isRFTPayer = isSupported(payer);
         for (uint256 i = 0; i < tokens.length; ++i) {
@@ -251,7 +249,7 @@ library RFTLib {
                 delete transact.delta[token];
             }
 
-            transact.status = ReentrancyStatus.Idle;
+            unlock();
         }
     }
 
@@ -267,8 +265,10 @@ library RFTLib {
         int256[] memory amounts,
         bytes memory data
     ) internal returns (bytes memory cbData) {
+        lock(ReentrancyStatus.Locked);
         ContractLib.assertContract(payer);
         cbData = IRFTPayer(payer).tokenRequestCB(tokens, amounts, data);
+        unlock();
     }
 
     /**
@@ -287,6 +287,7 @@ library RFTLib {
         int256[] memory amounts,
         bytes memory data
     ) internal returns (bytes memory cbData) {
+        lock(ReentrancyStatus.Locked);
         if (isSupported(payer)) {
             cbData = IRFTPayer(payer).tokenRequestCB(tokens, amounts, data);
         } else {
@@ -296,6 +297,7 @@ library RFTLib {
                 }
             }
         }
+        unlock();
     }
 
     /**
@@ -312,5 +314,31 @@ library RFTLib {
         if (!success) return false;
 
         return abi.decode(res, (bool));
+    }
+
+    /// @notice Get the current reentrancy status.
+    function viewLock() private returns (ReentrancyStatus status) {
+        assembly {
+            status := tload(RFT_LOCK_SLOT)
+        }
+    }
+
+    /// @notice Lock the mutex.
+    function lock(ReentrancyStatus newStatus) private {
+        ReentrancyStatus status = viewLock();
+        if (status != ReentrancyStatus.Idle) {
+            revert ReentrancyLocked();
+        }
+        assembly {
+            tstore(RFT_LOCK_SLOT, newStatus)
+        }
+    }
+
+    /// @notice Unlock the mutex
+    function unlock() private {
+        ReentrancyStatus idled = ReentrancyStatus.Idle;
+        assembly {
+            tstore(RFT_LOCK_SLOT, idled)
+        }
     }
 }
