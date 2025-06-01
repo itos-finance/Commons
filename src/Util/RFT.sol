@@ -317,7 +317,7 @@ library RFTLib {
     }
 
     /// @notice Get the current reentrancy status.
-    function viewLock() private returns (ReentrancyStatus status) {
+    function viewLock() private view returns (ReentrancyStatus status) {
         assembly {
             status := tload(RFT_LOCK_SLOT)
         }
