@@ -149,6 +149,8 @@ library RFTLib {
      * @notice Request & Send any tokens to change the balances as indicated in a reentrant way.
      * @notice Sends tokens regardless of what the payer is, but will do a RFT request if the payer
      * is a contract that supports IRFTPayer, otherwise it will transfer from.
+     * @notice If using this function, DO NOT use any other methods of changing the contract's token balances
+     * or else you will corrupt the accounting of any ongoing reentrant settlements.
      * @notice This call can be nested multiple times as opposed to the normal settle function.
      * @param payer Who the transaction is with. Can be a contract or a wallet. If it is a contract, it expects ERC165 support.
      * @param tokens The token list matching 1 to 1 to the balance changes we want.
