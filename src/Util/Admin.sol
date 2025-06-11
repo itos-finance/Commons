@@ -41,7 +41,7 @@ struct AdminRegistry {
 /// in a Diamond storage context. Most contracts that need this level of security sophistication
 /// are probably large enough to required diamond storage.
 library AdminLib {
-    bytes32 constant ADMIN_STORAGE_POSITION = keccak256("v4.admin.diamond.storage");
+    bytes32 public constant ADMIN_STORAGE_POSITION = keccak256("v4.admin.diamond.storage");
 
     error NotOwner();
     error InsufficientCredentials(address caller, uint256 expectedRights, uint256 actualRights);
@@ -110,7 +110,7 @@ library AdminLib {
     /// and must confirm validity by accepting the ownership.
     /// @dev Remember to initialize the owner to a contract that can reassign on construction.
     function reassignOwner(address newOwner) internal {
-        validateOwner();
+        validateOwner(); // This is the only validate we do internal to AdminLib because it's so important.
         adminStore().pendingOwner = newOwner;
     }
 
@@ -151,22 +151,22 @@ contract BaseAdminFacet is IERC173 {
         Auto165Lib.addSupport(type(IERC173).interfaceId);
     }
 
-    function transferOwnership(address _newOwner) external override {
-        AdminLib.reassignOwner(_newOwner);
-    }
-
     function owner() external view override returns (address owner_) {
         owner_ = AdminLib.getOwner();
-    }
-
-    /// The pending owner can accept their ownership rights.
-    function acceptOwnership() external {
-        emit IERC173.OwnershipTransferred(AdminLib.getOwner(), msg.sender);
-        AdminLib.acceptOwnership();
     }
 
     /// Fetch the admin level for an address.
     function adminRights(address addr) external view returns (uint256 rights) {
         return AdminLib.getAdminRights(addr);
+    }
+
+    function transferOwnership(address _newOwner) external virtual override {
+        AdminLib.reassignOwner(_newOwner);
+    }
+
+    /// The pending owner can accept their ownership rights.
+    function acceptOwnership() external virtual {
+        emit IERC173.OwnershipTransferred(AdminLib.getOwner(), msg.sender);
+        AdminLib.acceptOwnership();
     }
 }
