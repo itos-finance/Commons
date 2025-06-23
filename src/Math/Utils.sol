@@ -112,10 +112,10 @@ library MathUtils {
     /// This rounds down. Generally, you'll want to multiply this ratio with another value through X256.mul256.
     /// @dev b must be greater than 1.
     /// @dev BE AWARE OF WHEN THIS IS INACCURATE. THERE ARE VERY RARE INSTANCES WHERE THIS IS APPROPRIATE.
-    /// The inaccuracy is significant.
+    /// The inaccuracy is significant. DO NOT USE WHERE PRECISION IS REQUIRED. Consider mulDivX256 instead.
     /// @custom:gas 104
     function percentX256(uint256 a, uint256 b) internal pure returns (uint256 ratioX256) {
-        if (a == b) return uint256(int256(-1));
+        if (a == b) return type(uint256).max; // 100% is the max ratio.
         /// We actually compute 2^256 / b first extremely cheaply. ~20 gas
         require(b > 1, "0");
         assembly {
