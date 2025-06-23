@@ -51,8 +51,7 @@ library Timed {
     /// Use in an external contract function to submit time gated changes.
     function precommit(PreCommits storage s, uint256 useId, bytes calldata _entry) internal {
         TimedEntry storage entry = s.entries[useId];
-        if (entry.timestamp != 0)
-            revert ExistingPrecommitFound(useId);
+        if (entry.timestamp != 0) revert ExistingPrecommitFound(useId);
         entry.timestamp = uint64(block.timestamp);
         entry.submitter = msg.sender;
         entry.entry = _entry;
@@ -98,8 +97,7 @@ library Timed {
     function memoryPrecommit(uint256 useId, bytes memory _entry) internal {
         PreCommits storage s = timedStore();
         TimedEntry storage entry = s.entries[useId];
-        if (entry.timestamp != 0)
-            revert ExistingPrecommitFound(useId);
+        if (entry.timestamp != 0) revert ExistingPrecommitFound(useId);
         entry.timestamp = uint64(block.timestamp);
         entry.submitter = msg.sender;
         entry.entry = _entry;
@@ -126,13 +124,11 @@ library Timed {
     // according to the passed in delay. Delete the entry from the bookkeeping if returned.
     function fetchPrecommit(uint256 useId, uint32 delay) internal returns (bytes memory e) {
         TimedEntry memory tde = fetchAndDelete(useId); // delete will undo if reverted.
-        if (tde.timestamp == 0)
-            revert NoPrecommitFound(useId);
+        if (tde.timestamp == 0) revert NoPrecommitFound(useId);
 
         uint64 actualTime = uint64(block.timestamp);
         uint64 expectedTime = tde.timestamp + delay;
-        if (actualTime < expectedTime)
-            revert PrematureParamUpdate(useId, expectedTime, actualTime);
+        if (actualTime < expectedTime) revert PrematureParamUpdate(useId, expectedTime, actualTime);
 
         e = tde.entry;
     }

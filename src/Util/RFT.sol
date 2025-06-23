@@ -75,7 +75,8 @@ library RFTLib {
      * @notice Request & Send any tokens to change the balances as indicated. This is non-reentrant.
      * @notice Sends tokens regardless of what the payer is, but will do a RFT request if the payer
      * is a contract that supports IRFTPayer, otherwise it will transfer from.
-     * @param payer Who the transaction is with. Can be a contract or a wallet. If it is a contract, it expects ERC165 support.
+     * @param payer Who the transaction is with. Can be a contract or a wallet.
+     * If it is a contract, it expects ERC165 support.
      * @param tokens The token list matching 1 to 1 to the balance changes we want.
      * @param balanceChanges The deltas we want in our balances for the given tokens. Positive means we receive tokens
      * as its a positive balance change from the caller's perspective. Negative means tokens will be sent.
@@ -135,7 +136,8 @@ library RFTLib {
      * @notice If using this function, DO NOT use any other methods of changing the contract's token balances
      * or else you will corrupt the accounting of any ongoing reentrant settlements.
      * @notice This call can be nested multiple times as opposed to the normal settle function.
-     * @param payer Who the transaction is with. Can be a contract or a wallet. If it is a contract, it expects ERC165 support.
+     * @param payer Who the transaction is with. Can be a contract or a wallet.
+     * If it is a contract, it expects ERC165 support.
      * @param tokens The token list matching 1 to 1 to the balance changes we want.
      * @param balanceChanges The deltas we want in our balances for the given tokens. Positive means we receive tokens
      * as its a positive balance change from the caller's perspective. Negative means tokens will be sent.
@@ -185,7 +187,7 @@ library RFTLib {
                     transact.delta[token] = -1;
                     // Since the balance is 0 the request is obviously positive or else it'll fail on the transfer.
                     // So we can pretend our balance was originally 1 but we transfered that 1.
-                    // The balance change is otherwise unchanged, and we still arrive at the correct final expected balance.
+                    // The balance change is otherwise unchanged, and we still arrive at the correct final balance.
                     // The alternative to doing this optimization is another mapping that is a set of seen tokens.
                     // That would mean a cold storage write which is much more expensive than this conditional and
                     // hot write to transact.delta.

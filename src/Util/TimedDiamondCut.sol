@@ -9,9 +9,9 @@ pragma solidity ^0.8.0;
  * /*****************************************************************************
  */
 
-import {ITimedDiamondCut} from "../interfaces/ITimedDiamondCut.sol";
-import {IDiamond} from "../Diamond/interfaces/IDiamond.sol";
-import {LibDiamond} from "../Diamond/libraries/LibDiamond.sol";
+import { ITimedDiamondCut } from "../interfaces/ITimedDiamondCut.sol";
+import { IDiamond } from "../Diamond/interfaces/IDiamond.sol";
+import { LibDiamond } from "../Diamond/libraries/LibDiamond.sol";
 
 struct TimedCut {
     ITimedDiamondCut.FacetCut cut;
@@ -48,11 +48,11 @@ abstract contract TimedDiamondCutFacet is ITimedDiamondCut {
     function validateVeto() internal view virtual;
 
     /// @inheritdoc ITimedDiamondCut
-    function timedDiamondCut(ITimedDiamondCut.FacetCut calldata _cut, address _init, bytes calldata _calldata)
-        external
-        override
-        returns (uint256 assignmentId)
-    {
+    function timedDiamondCut(
+        ITimedDiamondCut.FacetCut calldata _cut,
+        address _init,
+        bytes calldata _calldata
+    ) external override returns (uint256 assignmentId) {
         validateCaller();
 
         TimedCutStorage storage tcs = timedCutStorage();

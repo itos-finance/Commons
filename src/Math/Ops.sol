@@ -209,7 +209,7 @@ library X128 {
     }
 
     /// Attempt to divide a by b to get an X128 result. If the result is too large 0 and true is returned.
-    /// @dev TODO: untested
+    /// @dev TODO: untested, not used in prod.
     /// @dev This rounds down.
     function tryDivTo(uint256 a, uint256 b) internal pure returns (uint256 resX128, bool overFlow) {
         uint256 whole = a / b; // Whole result
@@ -230,8 +230,10 @@ library X128 {
             }
             return (resX128, false);
         }
-        // If the residual is too large, we try to shift up by as much as we can while still fitting into 256 bit arithmetic.
-        uint8 rMSB = MathUtils.msb(residual); // Could save 9 gas by making a tailored one for just the relevant 128 bits.
+        // If the residual is too large, we try to shift up by as much as we can while
+        // still fitting into 256 bit arithmetic.
+        // Could save 9 gas by making a tailored one for just the relevant 128 bits.
+        uint8 rMSB = MathUtils.msb(residual);
         /// Residual greather or equal to SHIFT means rMSB >= 128.
         uint8 shiftUp;
         uint8 shiftDown;
@@ -260,7 +262,6 @@ library X256 {
         return top;
     }
 }
-
 
 /// Convenience library for interacting with Uint128s by other types.
 library U128Ops {

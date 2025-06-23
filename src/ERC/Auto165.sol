@@ -2,7 +2,7 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import {IERC165} from "./interfaces/IERC165.sol";
+import { IERC165 } from "./interfaces/IERC165.sol";
 
 // A contract can comply with ERC165 by simply inheriting this contract.
 // Any other contracts it inherits from can indicate the supported interfaces

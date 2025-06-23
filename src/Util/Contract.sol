@@ -9,7 +9,7 @@ library ContractLib {
     // to call methods on it because many transfer functions check the returned
     // data length to determine success and an address with no bytecode will
     // return no data thus appearing like a success.
-   function isContract(address addr) internal view returns (bool) {
+    function isContract(address addr) internal view returns (bool) {
         uint32 size;
         assembly {
             size := extcodesize(addr)
@@ -34,20 +34,6 @@ library ContractLib {
         bytes32 salt,
         bytes32 initCodeHash
     ) public pure returns (address deployedAddr) {
-        deployedAddr = address(
-            uint160(
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            hex'ff',
-                            deployer,
-                            salt,
-                            initCodeHash
-                        )
-                    )
-                )
-            )
-        );
+        deployedAddr = address(uint160(uint256(keccak256(abi.encodePacked(hex"ff", deployer, salt, initCodeHash)))));
     }
-
 }

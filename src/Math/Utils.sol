@@ -19,7 +19,8 @@ library MathUtils {
     /// @notice Calculates the square root of x using the Babylonian method.
     ///
     /// @dev See https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method.
-    /// Copied from PRBMath: https://github.com/PaulRBerg/prb-math/blob/83b3a0dcd4aaca779d0632118772f00611340e79/src/Common.sol
+    /// Copied from PRBMath:
+    /// https://github.com/PaulRBerg/prb-math/blob/83b3a0dcd4aaca779d0632118772f00611340e79/src/Common.sol
     ///
     /// Notes:
     /// - If x is not a perfect square, the result is rounded down.

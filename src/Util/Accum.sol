@@ -34,7 +34,8 @@ library AccumImpl {
     /// @param other the value being subtracted from the accumulation
     /// @return difference The difference between other and self which is always positive.
     function diff(Accum self, Accum other) internal pure returns (uint256) {
-        unchecked { // underflow is okay
+        unchecked {
+            // underflow is okay
             return Accum.unwrap(self) - Accum.unwrap(other);
         }
     }

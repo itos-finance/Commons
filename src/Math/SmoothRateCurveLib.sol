@@ -100,5 +100,4 @@ library SmoothRateCurveLib {
             revert MaxRateAboveCurve(self.maxRateX64, maxCalculatedRate);
         }
     }
-
 }

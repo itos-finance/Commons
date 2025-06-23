@@ -2,8 +2,8 @@
 // Copyright 2023 Itos Inc.
 pragma solidity ^0.8.17;
 
-import {IERC20Minimal} from "../ERC/interfaces/IERC20Minimal.sol";
-import {ContractLib} from "./Contract.sol";
+import { IERC20Minimal } from "../ERC/interfaces/IERC20Minimal.sol";
+import { ContractLib } from "./Contract.sol";
 
 type Token is address;
 
@@ -27,8 +27,9 @@ library TokenImpl {
 
     /// Query the balance of this token for the caller.
     function balance(Token self) internal view returns (uint256) {
-        (bool success, bytes memory data) =
-            addr(self).staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
+        (bool success, bytes memory data) = addr(self).staticcall(
+            abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this))
+        );
         if (!(success && data.length >= 32)) {
             revert TokenBalanceInvalid();
         }
@@ -37,8 +38,9 @@ library TokenImpl {
 
     /// Query the balance of this token for another address.
     function balanceOf(Token self, address owner) internal view returns (uint256) {
-        (bool success, bytes memory data) =
-            addr(self).staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, owner));
+        (bool success, bytes memory data) = addr(self).staticcall(
+            abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, owner)
+        );
         if (!(success && data.length >= 32)) {
             revert TokenBalanceInvalid();
         }
@@ -49,8 +51,9 @@ library TokenImpl {
     function transfer(Token self, address recipient, uint256 amount) internal {
         if (amount == 0) return; // Short circuit
 
-        (bool success, bytes memory data) =
-            addr(self).call(abi.encodeWithSelector(IERC20Minimal.transfer.selector, recipient, amount));
+        (bool success, bytes memory data) = addr(self).call(
+            abi.encodeWithSelector(IERC20Minimal.transfer.selector, recipient, amount)
+        );
         if (!(success && (data.length == 0 || abi.decode(data, (bool))))) {
             revert TokenTransferFailure();
         }
@@ -60,8 +63,9 @@ library TokenImpl {
     function approve(Token self, address spender, uint256 amount) internal {
         if (amount == 0) return;
 
-        (bool success, bytes memory data) =
-            addr(self).call(abi.encodeWithSelector(IERC20Minimal.approve.selector, spender, amount));
+        (bool success, bytes memory data) = addr(self).call(
+            abi.encodeWithSelector(IERC20Minimal.approve.selector, spender, amount)
+        );
         if (!(success && (data.length == 0 || abi.decode(data, (bool))))) {
             revert TokenApproveFailure();
         }

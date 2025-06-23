@@ -65,7 +65,7 @@ contract MutexBase {
 
     /// Modifier for a global locking mechanism.
     /// @dev We can explore taking in an arg to specify one of many locks if necessary.
-    modifier mutexLocked {
+    modifier mutexLocked() {
         // This uses the diamond storage mutex for now.
         Mutex storage m = MutexLib.mutexStorage();
         m.lock();
