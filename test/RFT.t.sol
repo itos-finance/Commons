@@ -16,7 +16,7 @@ contract MockRFTPayer is RFTPayer, Auto165 {
         address[] calldata tokens,
         int256[] calldata requests,
         bytes calldata
-    ) external returns (bytes memory cbData) {
+    ) external returns (bytes memory) {
         for (uint256 i = 0; i < tokens.length; ++i) {
             if (requests[i] > 0) {
                 MintableERC20(tokens[i]).mint(msg.sender, uint256(requests[i]));
@@ -26,7 +26,7 @@ contract MockRFTPayer is RFTPayer, Auto165 {
 }
 
 contract MockRFTDataPayer is RFTPayer, Auto165 {
-    bytes _cbData;
+    bytes public _cbData;
     constructor(bytes memory data) {
         _cbData = data;
     }
@@ -65,7 +65,7 @@ contract RFTMultiplePayer is RFTPayer, Auto165 {
         address[] calldata tokens,
         int256[] calldata,
         bytes calldata data
-    ) external returns (bytes memory cbData) {
+    ) external returns (bytes memory) {
         (uint256 pay, int256 nextRequest, bytes memory nextData) = abi.decode(data, (uint256, int256, bytes));
         if (pay > 0) {
             MintableERC20(tokens[0]).mint(msg.sender, pay);
@@ -87,7 +87,7 @@ contract RFTSettlePayer is RFTPayer, Auto165 {
         address[] calldata,
         int256[] calldata request,
         bytes calldata data
-    ) external returns (bytes memory cbData) {
+    ) external returns (bytes memory) {
         bool reentrant = abi.decode(data, (bool));
         if (reentrant) {
             helper.reentrantSettle(address(this), request[0], abi.encode(false));

@@ -7,7 +7,6 @@ import { MathUtils } from "../../src/Math/Utils.sol";
 import { FullMath } from "../../src/Math/FullMath.sol";
 
 contract MathUtilsTest is Test {
-
     function testPercentX256() public pure {
         uint256 res = MathUtils.percentX256(50, 100);
         assertApproxEqAbs(res, 1 << 255, 100);
@@ -27,8 +26,8 @@ contract MathUtilsTest is Test {
         vm.assume(a < (uint256(1) << 254));
         console.log(a, b);
         uint256 exact = FullMath.mulDiv(uint256(1) << 254, a << 2, b);
-        // uint256 approx = MathUtils.percentX256(a, b);
-        // assertGe(exact, approx);
+        uint256 approx = MathUtils.percentX256(a, b);
+        assertGe(exact, approx);
     }
 
     /// Try to test that without a certain percentage difference, this function is somewhat accureate.

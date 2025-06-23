@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import {console2} from "forge-std/console2.sol";
-import {PRBTest} from "@prb/test/PRBTest.sol";
-import {StdCheats} from "forge-std/StdCheats.sol";
+import { console2 } from "forge-std/console2.sol";
+import { PRBTest } from "@prb/test/PRBTest.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
 
-import {TimedAdminFacet} from "../src/Util/TimedAdmin.sol";
-import {AdminLib} from "../src/Util/Admin.sol";
-import {Timed} from "../src/Util/Timed.sol";
+import { TimedAdminFacet } from "../src/Util/TimedAdmin.sol";
+import { AdminLib } from "../src/Util/Admin.sol";
+import { Timed } from "../src/Util/Timed.sol";
 
 contract TimedTest is PRBTest, StdCheats {
     TestTimedFacet public facet;
@@ -26,7 +26,10 @@ contract TimedTest is PRBTest, StdCheats {
         // Can't accept too early
         vm.expectRevert(
             abi.encodeWithSelector(
-                Timed.PrematureParamUpdate.selector, useId, uint64(block.timestamp) + 1, uint64(block.timestamp)
+                Timed.PrematureParamUpdate.selector,
+                useId,
+                uint64(block.timestamp) + 1,
+                uint64(block.timestamp)
             )
         );
         facet.acceptRights();
@@ -96,7 +99,7 @@ contract TestTimedFacet is TimedAdminFacet {
         return add ? 0 : 1;
     }
 
-    function getDelay() public pure override returns (uint32) {
+    function getDelay(bool) public pure override returns (uint32) {
         return 1;
     }
 }
