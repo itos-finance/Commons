@@ -1,8 +1,6 @@
 {
   "extends": "solhint:recommended",
-  "plugins": [
-    "prettier"
-  ],
+  "plugins": ["prettier"],
   "rules": {
     "func-visibility": [
       "error",
@@ -10,14 +8,8 @@
         "ignoreConstructors": true
       }
     ],
-    "max-line-length": [
-      "error",
-      120
-    ],
-    "compiler-version": [
-      "error",
-      ">=0.4.0"
-    ],
+    "max-line-length": ["error", 120],
+    "compiler-version": ["error", ">=0.4.0"],
     "no-empty-blocks": "off",
     "not-rely-on-time": "off",
     "prettier/prettier": [
