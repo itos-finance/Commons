@@ -1,7 +1,7 @@
 # Full reference https://github.com/foundry-rs/foundry/tree/master/config
 
 [profile.default]
-auto_detect_solc = false
+evm_version = 'cancun'
 bytecode_hash = "none"
 fuzz = { runs = 256 }
 gas_reports = ["*"]
@@ -9,7 +9,7 @@ libs = ["lib"]
 optimizer = true
 optimizer_runs = 10_000
 out = "out"
-solc = "0.8.20"
+solc = "0.8.28"
 src = "src"
 test = "test"
 
