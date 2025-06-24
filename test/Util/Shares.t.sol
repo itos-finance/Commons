@@ -39,6 +39,7 @@ contract SharesTest is Test {
 
     // removeAmount tests
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertRemoveAmountOfZero() public {
         Shares memory shares;
         vm.expectRevert();
@@ -65,6 +66,7 @@ contract SharesTest is Test {
 
     // removeShares tests
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertRemoveSharesOfZero() public {
         Shares memory shares;
         vm.expectRevert();

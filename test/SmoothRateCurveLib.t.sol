@@ -88,6 +88,7 @@ contract SmoothRateCurveLibTest is Test {
         assertEq(memoryConfig.maxRateX64, 4);
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertInitializeConfigIfNegativeBetaOverflowsTheOffset() public {
         SmoothRateCurveConfig memory memoryConfig;
 
@@ -96,6 +97,7 @@ contract SmoothRateCurveLibTest is Test {
         memoryConfig.initializeConfig(1, beta, 3, 4);
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertInitializeConfigIfCalculationOverflowsAtZeroPercentUtilization() public {
         SmoothRateCurveConfig memory memoryConfig;
 
@@ -104,6 +106,7 @@ contract SmoothRateCurveLibTest is Test {
         memoryConfig.initializeConfig((1 << 128) - 1, beta, 1, 4);
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertInitializeConfigIfCalculationOverflowsAtNearMaxUtilization() public {
         SmoothRateCurveConfig memory memoryConfig;
 
@@ -112,6 +115,7 @@ contract SmoothRateCurveLibTest is Test {
         memoryConfig.initializeConfig((1 << 128) - 1, beta, (1 << 128) - 1, 4);
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertInitializeConfigIfMaxRateIsGreaterThanMaxCalculatedRate() public {
         SmoothRateCurveConfig memory memoryConfig;
 
@@ -121,6 +125,7 @@ contract SmoothRateCurveLibTest is Test {
 
     // Validate Tests
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertValidateIfInvAlphaIsZero() public {
         SmoothRateCurveConfig memory config = mmConfigSPR;
         config.invAlphaX128 = 0;
@@ -128,6 +133,7 @@ contract SmoothRateCurveLibTest is Test {
         config.validate();
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertValidateIfMaxUtilIsZero() public {
         SmoothRateCurveConfig memory config = mmConfigSPR;
         config.maxUtilX64 = 0;
@@ -135,6 +141,7 @@ contract SmoothRateCurveLibTest is Test {
         config.validate();
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertValidateIfMaxRateIsZero() public {
         SmoothRateCurveConfig memory config = mmConfigSPR;
         config.maxRateX64 = 0;
@@ -142,6 +149,7 @@ contract SmoothRateCurveLibTest is Test {
         config.validate();
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertValidateOverflowsAtUtilExtreme() public {
         SmoothRateCurveConfig memory memoryConfig;
 
@@ -150,6 +158,7 @@ contract SmoothRateCurveLibTest is Test {
         memoryConfig.initializeConfig((1 << 128) - 1, beta, 1, 4);
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testRevertValidateMaxRateAboveCurve() public {
         SmoothRateCurveConfig memory config = mmConfigSPR;
         vm.expectRevert(abi.encodeWithSelector(SmoothRateCurveLib.MaxRateAboveCurve.selector, 4, 1));

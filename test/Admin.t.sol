@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import {console2} from "forge-std/console2.sol";
-import {PRBTest} from "@prb/test/PRBTest.sol";
-import {StdCheats} from "forge-std/StdCheats.sol";
+import { console2 } from "forge-std/console2.sol";
+import { PRBTest } from "@prb/test/PRBTest.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
 
-import {AdminLib} from "../src/Util/Admin.sol";
+import { AdminLib } from "../src/Util/Admin.sol";
 
 contract AdminTest is PRBTest, StdCheats {
     // solhint-disable
@@ -21,6 +21,7 @@ contract AdminTest is PRBTest, StdCheats {
         AdminLib.validateRights(right);
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testOwner() public {
         assertEq(AdminLib.getOwner(), msg.sender);
         AdminLib.validateOwner();

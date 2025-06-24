@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import {console2} from "forge-std/console2.sol";
-import {PRBTest} from "@prb/test/PRBTest.sol";
-import {StdCheats} from "forge-std/StdCheats.sol";
+import { console2 } from "forge-std/console2.sol";
+import { PRBTest } from "@prb/test/PRBTest.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
 
-import {Mutex, MutexImpl, MutexLib, MutexBase} from "../src/Util/Mutex.sol";
+import { Mutex, MutexImpl, MutexLib, MutexBase } from "../src/Util/Mutex.sol";
 
 contract MutexTest is PRBTest, StdCheats, MutexBase {
     using MutexImpl for Mutex;
@@ -41,6 +41,7 @@ contract MutexTest is PRBTest, StdCheats, MutexBase {
         m.lock();
     }
 
+    /// forge-config: default.allow_internal_expect_revert = true
     function testMutexLock() public {
         Mutex storage m = MutexLib.mutexStorage();
         m.lock();
@@ -60,6 +61,7 @@ contract MutexTest is PRBTest, StdCheats, MutexBase {
     }
 
     /// Test using the mutex modifier does what we want.
+    /// forge-config: default.allow_internal_expect_revert = true
     function testMutexModifier() public {
         Mutex storage m = MutexLib.mutexStorage();
 

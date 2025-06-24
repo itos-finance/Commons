@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.13;
 
-import {console2} from "forge-std/console2.sol";
-import {PRBTest} from "@prb/test/PRBTest.sol";
-import {StdCheats} from "forge-std/StdCheats.sol";
+import { console2 } from "forge-std/console2.sol";
+import { PRBTest } from "@prb/test/PRBTest.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
 
-import {ContractLib} from "../src/Util/Contract.sol";
-import {MockFactory, MockPool} from "CommonsTestLib/MockPool.u.sol";
+import { ContractLib } from "../src/Util/Contract.sol";
+import { MockFactory, MockPool } from "CommonsTestLib/MockPool.u.sol";
 
 contract ContractLibTest is PRBTest, StdCheats {
+    /// forge-config: default.allow_internal_expect_revert = true
     function testIsContract() public {
         assertTrue(ContractLib.isContract(address(this)));
         assertTrue(!ContractLib.isContract(address(0)));

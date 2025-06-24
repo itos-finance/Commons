@@ -15,8 +15,8 @@ contract MathUtilsTest is Test {
     /// Test that the percentX256 function is bounded above by the exact result.
     function testPercentX256Bounded(uint256 a, uint256 b) public pure {
         // Not sure why, but < type(uint256).max still errors in mulDiv.
-        vm.assume(a < type(uint256).max - 1);
-        vm.assume(b < type(uint256).max - 1);
+        vm.assume(a < type(uint256).max);
+        vm.assume(b < type(uint256).max);
         vm.assume(a != b);
         // numerator can't be 0.
         a += 1;
