@@ -1,11 +1,11 @@
-// SPDX-License-Identifier: BSL-1.1
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {console2} from "forge-std/console2.sol";
-import {StdCheats} from "forge-std/StdCheats.sol";
-import {PRBTest} from "@prb/test/PRBTest.sol";
+import { console2 } from "forge-std/console2.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
+import { PRBTest } from "@prb/test/PRBTest.sol";
 
-import {FullMath} from "../src/Math/FullMath.sol";
+import { FullMath } from "../src/Math/FullMath.sol";
 
 contract FullMathGasTest is PRBTest, StdCheats {
     function testMulDivGas() public pure {

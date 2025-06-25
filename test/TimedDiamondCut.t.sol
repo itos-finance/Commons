@@ -1,14 +1,14 @@
-// SPDX-License-Identifier: BSL-1.1
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {console2} from "forge-std/console2.sol";
-import {PRBTest} from "@prb/test/PRBTest.sol";
-import {StdCheats} from "forge-std/StdCheats.sol";
+import { console2 } from "forge-std/console2.sol";
+import { PRBTest } from "@prb/test/PRBTest.sol";
+import { StdCheats } from "forge-std/StdCheats.sol";
 
-import {TimedDiamondCutFacet} from "../src/Util/TimedDiamondCut.sol";
-import {ITimedDiamondCut} from "../src/interfaces/ITimedDiamondCut.sol";
-import {IDiamond} from "../src/Diamond/interfaces/IDiamond.sol";
-import {Diamond, DiamondArgs, FunctionNotFound} from "../src/Diamond/Diamond.sol";
+import { TimedDiamondCutFacet } from "../src/Util/TimedDiamondCut.sol";
+import { ITimedDiamondCut } from "../src/interfaces/ITimedDiamondCut.sol";
+import { IDiamond } from "../src/Diamond/interfaces/IDiamond.sol";
+import { Diamond, DiamondArgs, FunctionNotFound } from "../src/Diamond/Diamond.sol";
 /* solhint-disable */
 
 // Shared storage utility contract.
