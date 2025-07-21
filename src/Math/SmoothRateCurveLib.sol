@@ -14,7 +14,7 @@ pragma solidity ^0.8.17;
 // q_m - max utilization
 //
 // where
-// f_b, f_t, f_b exist in R
+// f_b, f_t, f_m exist in R
 // q, q_t, q_m exist in [0, 1]
 //
 // alpha =  q_t / (q_m * (q_m - q_t) * (f_t - f_b))
