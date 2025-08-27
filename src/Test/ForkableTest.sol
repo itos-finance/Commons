@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.12; // For string concat
 
-import {Test} from "forge-std/Test.sol";
-import {EnvLoader} from "../Util/Env.sol";
+import { Test } from "forge-std/Test.sol";
+import { EnvLoader } from "../Util/Env.sol";
 
 /**
  * ForkableTests rely on a json file that holds key value pairs of addresses of interest.
@@ -59,7 +59,7 @@ contract ForkableTest is EnvLoader, Test {
     }
 
     /* Setup */
-    function setUp() public {
+    function setUp() public virtual {
         // Every call should come from the deployer due to permissions
         _deployer = vm.envOr("DEPLOYER_PUBLIC_KEY", address(this));
 
