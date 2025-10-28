@@ -21,15 +21,15 @@ abstract contract TimedAdminFacet is BaseAdminFacet {
     /* Owner changes */
 
     function transferOwnership(address _newOwner) external virtual override {
-        AdminLib.validateOwner();
+        AdminLib.reassignOwner(_newOwner);
         Timed.memoryPrecommit(OWNER_USE_ID, abi.encode(_newOwner));
     }
 
     /// The pending owner can accept their ownership rights.
     function acceptOwnership() external virtual override {
-        bytes memory entry = Timed.fetchPrecommit(OWNER_USE_ID, getDelay(true));
-        address _newOwner = abi.decode(entry, (address));
-        AdminLib.reassignOwner(_newOwner);
+        // Checks the delay
+        Timed.fetchPrecommit(OWNER_USE_ID, getDelay(true));
+        // Validates the caller is the new owner.
         AdminLib.acceptOwnership();
         emit IERC173.OwnershipTransferred(AdminLib.getOwner(), msg.sender);
     }
