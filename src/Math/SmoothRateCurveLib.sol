@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BSL-1.1
+// SPDX-License-Identifier: MIT
 // Copyright Itos Inc 2023
 pragma solidity ^0.8.17;
 
